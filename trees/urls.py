@@ -15,4 +15,6 @@ urlpatterns = [
     path('login/', views.user_login, name='login'),
     path('register/', views.register, name='register'),
     path('ajax/delete_tree/<int:pk>/', views.delete_tree, name='delete_tree'),
+    #testing
+    
 ]
