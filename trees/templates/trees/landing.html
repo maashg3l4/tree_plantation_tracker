@@ -2,7 +2,7 @@
 {% block title %}Grow impact together{% endblock %}
 {% block content %}
 <main class="landing">
-  <section class="landing-hero">
+  <section class="landing-hero" id="mission">
     <div class="landing-copy">
       <p class="eyebrow">A greener world, grown together</p>
       <h1>Make every tree<br><span>count for more.</span></h1>
@@ -40,7 +40,7 @@
     <div><strong>{{ public_farm_count|default:0 }}</strong><span>farms growing in Grove</span></div>
   </section>
 
-  <section class="landing-dual">
+  <section class="landing-dual" id="how-it-works">
     <article class="audience-card audience-card--people">
       <span class="audience-kicker">For everyone who cares</span>
       <h2>Plant something.<br>Pass it on.</h2>
@@ -54,6 +54,5 @@
       <a href="{% url 'grove:workspace' %}">Discover Grove <span aria-hidden="true">↗</span></a>
     </article>
   </section>
-  <footer class="landing-footer"><span>Tree Plantation Tracker</span><span>Small actions. Living landscapes. Shared progress.</span></footer>
 </main>
 {% endblock %}

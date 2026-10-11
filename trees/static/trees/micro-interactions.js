@@ -28,9 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const prompt = document.getElementById("install-app-prompt");
   const installButton = document.getElementById("install-app-button");
   const dismissButton = document.getElementById("dismiss-install-button");
+  const footerInstallButton = document.querySelector("[data-install-app]");
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredPrompt = event;
+    if (footerInstallButton) footerInstallButton.disabled = false;
     if (prompt && localStorage.getItem("install-prompt-dismissed") !== "true") {
       prompt.hidden = false;
     }
@@ -41,6 +43,22 @@ document.addEventListener("DOMContentLoaded", () => {
     await deferredPrompt.userChoice;
     deferredPrompt = null;
     prompt.hidden = true;
+    if (footerInstallButton) footerInstallButton.disabled = true;
+  });
+  footerInstallButton?.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    footerInstallButton.disabled = true;
+    if (prompt) prompt.hidden = true;
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredPrompt = null;
+    if (footerInstallButton) {
+      footerInstallButton.disabled = true;
+      footerInstallButton.querySelector("span").textContent = "App installed";
+    }
   });
   dismissButton?.addEventListener("click", () => {
     prompt.hidden = true;

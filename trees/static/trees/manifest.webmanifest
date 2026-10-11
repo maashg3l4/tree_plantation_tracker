@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Tree Plantation Tracker",
-  "short_name": "Tree Garden",
+  "name": "Canopy",
+  "short_name": "Canopy",
   "description": "Grow a greener future with your gardening community.",
   "start_url": "/community/",
   "scope": "/",

@@ -8,6 +8,11 @@ from django.views.decorators.cache import never_cache
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("ops/", include(("ops.urls", "ops"), namespace="ops")),
+    path(
+        "report/<str:content_type>/<int:object_id>/",
+        include(("ops.report_urls", "report"), namespace="report"),
+    ),
     path("service-worker.js", never_cache(TemplateView.as_view(
         template_name="service-worker.js",
         content_type="application/javascript",

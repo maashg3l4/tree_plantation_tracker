@@ -1,0 +1,24 @@
+{% extends "ops/base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<header class="ops-topbar"><div><p class="ops-side-label">Operations · {{ request.user.get_username }}</p><h1 class="ops-title">Community overview</h1><p class="ops-subtitle">Today at a glance, plus the moderation work that needs attention.</p></div><a href="{% url 'admin:index' %}">Django admin ↗</a></header>
+<section class="ops-stats" aria-label="Platform metrics">
+  <article class="ops-stat"><span>Active · 24 hours</span><strong>{{ active_24h }}</strong></article>
+  <article class="ops-stat"><span>Active · 7 days</span><strong>{{ active_7d }}</strong></article>
+  <article class="ops-stat"><span>Active · 30 days</span><strong>{{ active_30d }}</strong></article>
+  <article class="ops-stat"><span>New members today</span><strong>{{ signups_today }}</strong></article>
+  <article class="ops-stat"><span>Posts today</span><strong>{{ posts_today }}</strong></article>
+  <article class="ops-stat{% if pending_reports %} ops-stat--alert{% endif %}"><span>Reports to review</span><strong>{{ pending_reports }}</strong></article>
+  <article class="ops-stat{% if pending_flags %} ops-stat--alert{% endif %}"><span>AI flags to review</span><strong>{{ pending_flags }}</strong></article>
+</section>
+<div class="ops-grid">
+  <div class="ops-stack">
+    <section class="ops-card"><h2 class="ops-section-title">Signups &amp; published posts · last 7 days</h2><div class="ops-bars">{% for row in day_rows %}<div class="ops-bar-row"><time>{{ row.day|date:"D, M j" }}</time><span class="ops-bar-track" title="Signups {{ row.signups }}; posts {{ row.posts }}"><i style="width:{% if row.signups or row.posts %}{{ row.signups|add:row.posts|default:1 }}0{% else %}2{% endif %}%;max-width:100%"></i></span><strong>{{ row.signups|add:row.posts }}</strong></div>{% endfor %}</div><p class="ops-muted">Daily activity counts: signups plus posts. Detailed charts are not included in this MVP.</p></section>
+    <section class="ops-card"><h2 class="ops-section-title">Recent moderator activity</h2><div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>When</th><th>Moderator</th><th>Action</th><th>Target</th></tr></thead><tbody>{% for entry in recent_activity %}<tr><td>{{ entry.created_at|date:"M j, H:i" }}</td><td>{{ entry.actor_label }}</td><td>{{ entry.get_action_display|default:entry.action }}</td><td>{{ entry.target_label }}</td></tr>{% empty %}<tr><td colspan="4" class="ops-empty">No moderation actions yet.</td></tr>{% endfor %}</tbody></table></div></section>
+  </div>
+  <aside class="ops-stack">
+    <section class="ops-card"><h2 class="ops-section-title">Review queues</h2><div class="ops-link-list"><a class="ops-link-card" href="{% url 'ops:reports' %}"><span>Community reports<small>Member-submitted reports</small></span><span class="ops-pill{% if pending_reports %} ops-pill--warning{% endif %}">{{ pending_reports }} pending</span></a><a class="ops-link-card" href="{% url 'ops:ai_flags' %}"><span>AI flags<small>Automated or manual review flags</small></span><span class="ops-pill{% if pending_flags %} ops-pill--warning{% endif %}">{{ pending_flags }} pending</span></a><a class="ops-link-card" href="{% url 'ops:audit_log' %}"><span>Audit history<small>Recorded moderation decisions</small></span><span aria-hidden="true">→</span></a></div></section>
+    <section class="ops-card"><h2 class="ops-section-title">Community totals</h2><div class="ops-link-list"><div class="ops-link-card"><span>Visible public posts</span><strong>{{ total_public_posts }}</strong></div><div class="ops-link-card"><span>Impact reactions</span><strong>{{ total_reactions }}</strong></div><div class="ops-link-card"><span>Visible comments</span><strong>{{ total_comments }}</strong></div></div></section>
+  </aside>
+</div>
+{% endblock %}

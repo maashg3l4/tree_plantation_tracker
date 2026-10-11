@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -29,6 +31,16 @@ class Tree(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     publication_status = models.CharField(
         max_length=12, choices=PUBLICATION_STATUS, default="published", db_index=True
+    )
+    moderation_status = models.CharField(
+        max_length=12,
+        choices=[
+            ("visible", "Visible"),
+            ("hidden", "Hidden"),
+            ("removed", "Removed"),
+        ],
+        default="visible",
+        db_index=True,
     )
     scheduled_publish_at = models.DateTimeField(null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -95,6 +107,16 @@ class Comment(models.Model):
     tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
+    moderation_status = models.CharField(
+        max_length=12,
+        choices=[
+            ("visible", "Visible"),
+            ("hidden", "Hidden"),
+            ("removed", "Removed"),
+        ],
+        default="visible",
+        db_index=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -265,6 +287,20 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.username}"
+
+
+class NewsletterSubscription(models.Model):
+    email = models.EmailField(unique=True)
+    unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True)
+    is_active = models.BooleanField(default=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    unsubscribed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-subscribed_at"]
+
+    def __str__(self):
+        return self.email
 
 
 class UserFollow(models.Model):

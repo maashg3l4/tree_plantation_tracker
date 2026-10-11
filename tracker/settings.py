@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "grove_finance",
     "grove_carbon",
     "grove_compliance",
+    "ops.apps.OpsConfig",
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.csrf",
                 "trees.context_processors.mobile_navigation",
+                "trees.context_processors.footer_configuration",
             ],
         },
     },
@@ -157,6 +159,20 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "en-us"
 LANGUAGES = [("en", "English"), ("bn", "বাংলা")]
 LOCALE_PATHS = [BASE_DIR / "locale"]
+CANOPY_FOOTER_URLS = {
+    "facebook": os.environ.get("CANOPY_FACEBOOK_URL", ""),
+    "instagram": os.environ.get("CANOPY_INSTAGRAM_URL", ""),
+    "x": os.environ.get("CANOPY_X_URL", ""),
+    "youtube": os.environ.get("CANOPY_YOUTUBE_URL", ""),
+    "linkedin": os.environ.get("CANOPY_LINKEDIN_URL", ""),
+    "google_play": os.environ.get("CANOPY_GOOGLE_PLAY_URL", ""),
+    "privacy": os.environ.get("CANOPY_PRIVACY_URL", ""),
+    "terms": os.environ.get("CANOPY_TERMS_URL", ""),
+    "cookies": os.environ.get("CANOPY_COOKIE_POLICY_URL", ""),
+    "accessibility": os.environ.get("CANOPY_ACCESSIBILITY_URL", ""),
+    "guidelines": os.environ.get("CANOPY_GUIDELINES_URL", ""),
+}
+CANOPY_SUPPORT_EMAIL = os.environ.get("CANOPY_SUPPORT_EMAIL", "")
 
 TIME_ZONE = "Asia/Dhaka"
 

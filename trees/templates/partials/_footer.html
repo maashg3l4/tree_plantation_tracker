@@ -1,0 +1,132 @@
+{% load i18n %}
+<footer class="canopy-footer">
+    <div class="canopy-footer-main">
+        <section class="canopy-footer-brand" aria-labelledby="canopy-footer-brand-title">
+            <a class="canopy-footer-wordmark" href="{% url 'home' %}" aria-label="{% trans 'Canopy home' %}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9m0 3C7 15 4 12 4 6c5 0 8 3 8 9Zm0-4c0-5 3-8 8-8 0 5-3 8-8 8Z"/></svg>
+                <span id="canopy-footer-brand-title">Canopy</span>
+            </a>
+            <p class="canopy-footer-tagline">{% trans "Where your garden grows online. Track, share, and celebrate every tree you plant." %}</p>
+            {% if canopy_footer_urls.facebook or canopy_footer_urls.instagram or canopy_footer_urls.x or canopy_footer_urls.youtube or canopy_footer_urls.linkedin %}
+                <nav class="canopy-footer-socials" aria-label="{% trans 'Canopy social media' %}">
+                    {% if canopy_footer_urls.facebook %}<a href="{{ canopy_footer_urls.facebook }}" aria-label="Facebook" rel="me noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8h3V4h-3a5 5 0 0 0-5 5v3H6v4h3v4h4v-4h3l1-4h-4V9a1 1 0 0 1 1-1Z"/></svg></a>{% endif %}
+                    {% if canopy_footer_urls.instagram %}<a href="{{ canopy_footer_urls.instagram }}" aria-label="Instagram" rel="me noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1" fill="currentColor" stroke="none"/></svg></a>{% endif %}
+                    {% if canopy_footer_urls.x %}<a href="{{ canopy_footer_urls.x }}" aria-label="X" rel="me noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 16 16M20 4 4 20M4 4h5l11 16h-5L4 4Z"/></svg></a>{% endif %}
+                    {% if canopy_footer_urls.youtube %}<a href="{{ canopy_footer_urls.youtube }}" aria-label="YouTube" rel="me noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12s0-4-1-5-4-1-9-1-8 0-9 1-1 5-1 5 0 4 1 5 4 1 9 1 8 0 9-1 1-5 1-5Z"/><path d="m10 9 5 3-5 3z"/></svg></a>{% endif %}
+                    {% if canopy_footer_urls.linkedin %}<a href="{{ canopy_footer_urls.linkedin }}" aria-label="LinkedIn" rel="me noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v11M4 4v.01M9 20v-7a4 4 0 0 1 8 0v7m0-7v7M9 9v11"/></svg></a>{% endif %}
+                </nav>
+            {% endif %}
+            <p class="canopy-footer-credit">{% trans "Made with care in Bangladesh" %}</p>
+        </section>
+
+        <details class="canopy-footer-column" data-footer-accordion>
+            <summary>{% trans "Pages" %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <nav aria-label="{% trans 'Pages' %}">
+                <a href="{% url 'tree_list' %}">{% trans "Community" %}</a>
+                <a href="{% url 'discover' %}">{% trans "Discover" %}</a>
+                <a href="{% url 'leaderboard' %}">{% trans "Leaderboard" %}</a>
+                <a href="{% url 'daily_challenges' %}">{% trans "Challenges" %}</a>
+                {% if user.is_authenticated %}<a href="{% url 'garden_insights' %}">{% trans "Insights" %}</a><a href="{% url 'achievements' %}">{% trans "Badges" %}</a>{% endif %}
+                <a href="{% url 'grove:workspace' %}">{% trans "Grove" %}</a>
+                <a href="{% url 'grove_market:listings' %}">{% trans "Marketplace" %}</a>
+            </nav>
+        </details>
+
+        <div class="canopy-footer-link-groups">
+        <details class="canopy-footer-column" data-footer-accordion>
+            <summary>{% trans "About" %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <nav aria-label="{% trans 'About Canopy' %}">
+                <a href="{% url 'home' %}#mission">{% trans "Our mission" %}</a>
+                <a href="{% url 'home' %}#how-it-works">{% trans "How it works" %}</a>
+                <a href="{% url 'tree_list' %}">{% trans "Community stories" %}</a>
+                {% if canopy_footer_urls.guidelines %}<a href="{{ canopy_footer_urls.guidelines }}" target="_blank" rel="noopener noreferrer">{% trans "Community guidelines" %}</a>{% endif %}
+            </nav>
+        </details>
+
+        <details class="canopy-footer-column" data-footer-accordion>
+            <summary>{% trans "Support" %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <nav aria-label="{% trans 'Support' %}">
+                <a href="{% url 'tree_list' %}">{% trans "Help in the community" %}</a>
+                <a href="https://github.com/maashg3l4/tree_plantation_tracker/issues/new" target="_blank" rel="noopener noreferrer">{% trans "Report a bug" %}</a>
+                <a href="https://github.com/maashg3l4/tree_plantation_tracker/issues/new" target="_blank" rel="noopener noreferrer">{% trans "Feature requests" %}</a>
+                {% if canopy_support_email %}<a href="mailto:{{ canopy_support_email|urlencode }}">{% trans "Contact us" %}</a>{% endif %}
+                {% if canopy_footer_urls.guidelines %}<a href="{{ canopy_footer_urls.guidelines }}" target="_blank" rel="noopener noreferrer">{% trans "Community guidelines" %}</a>{% endif %}
+            </nav>
+        </details>
+        </div>
+
+        <div class="canopy-footer-connect">
+        <details class="canopy-footer-column" data-footer-accordion>
+            <summary>{% trans "Get the app" %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="canopy-footer-app">
+                <p>{% trans "Take your garden community with you." %}</p>
+                {% if canopy_footer_urls.google_play %}
+                    <a class="canopy-store-link" href="{{ canopy_footer_urls.google_play }}" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5-15-8.5Z"/><path d="m5 3.5 10 11m-10 6 10-11"/></svg>
+                        <span><small>{% trans "GET IT ON" %}</small><strong>Google Play</strong></span>
+                    </a>
+                {% endif %}
+                <button class="canopy-install-button" type="button" data-install-app disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"/></svg>
+                    <span>{% trans "Install Canopy" %}</span>
+                </button>
+                <span class="canopy-app-store-soon" aria-disabled="true">{% trans "App Store — coming soon" %}</span>
+            </div>
+        </details>
+
+        <section class="canopy-footer-newsletter" aria-labelledby="canopy-newsletter-title">
+            <h2 id="canopy-newsletter-title">{% trans "Grow with us" %}</h2>
+            <p>{% trans "Gardening tips, community stories, and impact updates." %}</p>
+            <form class="canopy-newsletter-form" action="{% url 'newsletter_subscribe' %}" method="post" data-newsletter-form>
+                {% csrf_token %}
+                <label class="sr-only" for="canopy-newsletter-email">{% trans "Email address" %}</label>
+                <input id="canopy-newsletter-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="{% trans 'Your email address' %}" required>
+                <button type="submit" aria-label="{% trans 'Subscribe to the newsletter' %}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                </button>
+            </form>
+            <p class="canopy-newsletter-message" data-newsletter-message role="status" aria-live="polite"></p>
+            <a class="canopy-unsubscribe-link" data-newsletter-unsubscribe hidden>{% trans "Unsubscribe from this device" %}</a>
+            <small>{% trans "No spam. Unsubscribe anytime." %}</small>
+        </section>
+        </div>
+    </div>
+
+    <div class="canopy-footer-bottom">
+        <nav class="canopy-footer-legal" aria-label="{% trans 'Legal links' %}">
+            {% if canopy_footer_urls.privacy %}<a href="{{ canopy_footer_urls.privacy }}" target="_blank" rel="noopener noreferrer">{% trans "Privacy" %}</a>{% endif %}
+            {% if canopy_footer_urls.terms %}<a href="{{ canopy_footer_urls.terms }}" target="_blank" rel="noopener noreferrer">{% trans "Terms" %}</a>{% endif %}
+            {% if canopy_footer_urls.cookies %}<a href="{{ canopy_footer_urls.cookies }}" target="_blank" rel="noopener noreferrer">{% trans "Cookies" %}</a>{% endif %}
+            {% if canopy_footer_urls.accessibility %}<a href="{{ canopy_footer_urls.accessibility }}" target="_blank" rel="noopener noreferrer">{% trans "Accessibility" %}</a>{% endif %}
+            {% if canopy_support_email %}<a href="mailto:{{ canopy_support_email }}">{% trans "Contact" %}</a>{% endif %}
+            <a href="https://github.com/maashg3l4/tree_plantation_tracker/issues/new" target="_blank" rel="noopener noreferrer">{% trans "Report an issue" %}</a>
+        </nav>
+        <div class="canopy-footer-utility">
+            <form class="canopy-language-form" action="{% url 'set_language' %}" method="post" aria-label="{% trans 'Change language' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <label class="sr-only" for="canopy-language">{% trans "Language" %}</label>
+                <select id="canopy-language" name="language" data-language-select>
+                    <option value="en"{% if request.LANGUAGE_CODE|slice:":2" == "en" %} selected{% endif %}>English</option>
+                    <option value="bn"{% if request.LANGUAGE_CODE|slice:":2" == "bn" %} selected{% endif %}>বাংলা</option>
+                </select>
+            </form>
+            <a class="canopy-status-link" href="{% url 'system_status' %}" target="_blank" rel="noopener noreferrer" aria-label="{% trans 'Open system status' %}">
+                <span class="canopy-status-dot" data-system-status-dot aria-hidden="true"></span>
+                <span data-system-status-label>{% trans "Checking status" %}</span>
+            </a>
+            <span class="canopy-footer-copyright">© {% now "Y" %} Canopy</span>
+        </div>
+    </div>
+
+    <div class="canopy-footer-art" aria-hidden="true">
+        <svg viewBox="0 0 1440 140" preserveAspectRatio="xMidYMax slice">
+            <defs>
+                <linearGradient id="canopy-footer-sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#166534"/><stop offset="1" stop-color="#052e16"/></linearGradient>
+            </defs>
+            <path fill="url(#canopy-footer-sky)" d="M0 74c180-44 290-36 468 0s287 42 443 3 337-58 529-6v69H0Z"/>
+            <circle cx="1180" cy="38" r="21" fill="#bbf7d0" opacity=".8"/>
+            <path fill="#052e16" opacity=".72" d="m0 112 64-49 64 49h-39v28H39v-28Zm128 9 52-40 52 40h-31v19h-42v-19Zm198-9 69-54 69 54h-42v28h-54v-28Zm186 8 59-46 59 46h-35v21h-48v-21Zm255-5 74-57 74 57h-45v31h-58v-31Zm203 5 57-44 57 44h-34v23h-46v-23Zm170-8 70-54 70 54h-42v31h-55v-31Zm151 14 53-41 53 41h-32v17h-42v-17Z"/>
+        </svg>
+    </div>
+</footer>

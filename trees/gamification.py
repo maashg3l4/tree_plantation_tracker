@@ -94,13 +94,17 @@ def record_activity(user, activity, day=None):
 
 
 def achievement_metrics(user):
-    trees = Tree.objects.filter(user=user, publication_status="published")
+    trees = Tree.objects.filter(
+        user=user, publication_status="published", moderation_status="visible"
+    )
     tree_ids = trees.values("pk")
     issue_count = sum(
         len(issues)
-        for issues in TreeHealthAnalysis.objects.filter(post__user=user).values_list(
-            "issues", flat=True
-        )
+        for issues in TreeHealthAnalysis.objects.filter(
+            post__user=user,
+            post__publication_status="published",
+            post__moderation_status="visible",
+        ).values_list("issues", flat=True)
     )
     return {
         "tree_count": trees.count(),
@@ -111,7 +115,9 @@ def achievement_metrics(user):
             ).values("reaction_count")),
             default=0,
         ),
-        "post_comments": Comment.objects.filter(tree__in=tree_ids).count(),
+        "post_comments": Comment.objects.filter(
+            tree__in=tree_ids, moderation_status="visible"
+        ).count(),
         "post_pledges": Pledge.objects.filter(
             source_post__in=tree_ids, status="planted"
         ).count(),

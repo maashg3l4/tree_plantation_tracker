@@ -42,6 +42,15 @@
                 <li class="list-group-item">
                     <span class="fw-bold">{{ comment.user.username }}</span>: {{ comment.text }}
                     <span class="text-muted float-end" style="font-size:0.9em;">{{ comment.created_at|date:'Y-m-d H:i' }}</span>
+                    {% if user.is_authenticated and user.pk != comment.user_id %}
+                        <details class="ops-report-inline">
+                            <summary>Report</summary>
+                            <form method="post" action="{% url 'report:submit' 'comment' comment.pk %}">
+                                {% csrf_token %}{{ report_form.reason }}{{ report_form.details }}
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Send report</button>
+                            </form>
+                        </details>
+                    {% endif %}
                 </li>
             {% empty %}
                 <li class="list-group-item">No comments yet.</li>
@@ -56,6 +65,15 @@
             </div>
         </form>
         {% include "trees/partials/impact_reaction_bar.html" with tree=tree impact_reaction_types=impact_reaction_types user=user %}
+        {% if user.is_authenticated and user.pk != tree.user_id %}
+            <details class="ops-report-inline mb-3">
+                <summary>Report this tree post</summary>
+                <form method="post" action="{% url 'report:submit' 'tree' tree.pk %}">
+                    {% csrf_token %}{{ report_form.reason }}{{ report_form.details }}
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Send report</button>
+                </form>
+            </details>
+        {% endif %}
         {% if not tree.is_dead %}
             <a href="{% url 'add_health_log' tree.id %}" class="btn btn-outline-success fade-in-up mb-2">Add Health Log</a>
             <h4>🧑‍🌾 Scheduled Tasks</h4>

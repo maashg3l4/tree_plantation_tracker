@@ -1,0 +1,22 @@
+{% load i18n %}
+<div class="canopy-post-backdrop" data-post-backdrop hidden>
+    <section class="canopy-post-sheet" role="dialog" aria-modal="true" aria-labelledby="canopy-post-title">
+        <div class="canopy-post-sheet-handle" aria-hidden="true"></div>
+        <div class="canopy-post-sheet-heading">
+            <div><p class="eyebrow">{% trans "Share your progress" %}</p><h2 id="canopy-post-title">{% trans "What’s growing?" %}</h2></div>
+            <button class="canopy-icon-button" type="button" data-post-close aria-label="{% trans 'Close' %}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+        <a class="canopy-post-option" href="{% url 'add_tree' %}">
+            <span class="canopy-post-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9m0 3C7 15 4 12 4 6c5 0 8 3 8 9Zm0-4c0-5 3-8 8-8 0 5-3 8-8 8Z"/></svg></span>
+            <span><strong>{% trans "Add a tree" %}</strong><small>{% trans "Record a planting and share its story." %}</small></span>
+            <svg class="canopy-post-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        <a class="canopy-post-option" href="{% url 'add_tree' %}">
+            <span class="canopy-post-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+            <span><strong>{% trans "Share a garden update" %}</strong><small>{% trans "Post a new moment from your garden." %}</small></span>
+            <svg class="canopy-post-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+    </section>
+</div>

@@ -7,11 +7,12 @@
   <link rel="manifest" href="{% static 'trees/manifest.webmanifest' %}">
   <link href="{% static 'trees/app.css' %}" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="auth-body">
   <main class="auth-layout">
-    <a class="auth-brand" href="{% url 'home' %}" aria-label="Tree Plantation Tracker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9m0 3C7 15 4 12 4 6c5 0 8 3 8 9Zm0-4c0-5 3-8 8-8 0 5-3 8-8 8Z"/></svg><span>Tree Garden</span></a>
+    <a class="auth-brand" href="{% url 'home' %}" aria-label="Canopy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9m0 3C7 15 4 12 4 6c5 0 8 3 8 9Zm0-4c0-5 3-8 8-8 0 5-3 8-8 8Z"/></svg><span>Canopy</span></a>
     <section class="auth-card">{% block auth_content %}{% endblock %}</section>
     <p class="auth-footnote">A growing community for people and plants.</p>
   </main>

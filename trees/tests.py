@@ -22,6 +22,7 @@ from .models import (
     DailyChallenge,
     HelpOffer,
     Notification,
+    NewsletterSubscription,
     Pledge,
     Profile,
     Reaction,
@@ -304,6 +305,70 @@ class AIAnalysisTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Health 92/100')
         self.assertContains(response, 'data-issues="[&quot;Dry leaves&quot;, &quot;Low contrast&quot;]"')
+
+
+class FooterFeatureTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+
+        cache.clear()
+
+    def test_footer_renders_navigation_newsletter_language_and_status(self):
+        response = self.client.get(reverse("tree_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "canopy-footer")
+        self.assertContains(response, reverse("newsletter_subscribe"))
+        self.assertContains(response, reverse("system_status"))
+        self.assertContains(response, reverse("set_language"))
+
+    def test_newsletter_subscription_is_validated_and_idempotent(self):
+        invalid = self.client.post(
+            reverse("newsletter_subscribe"), {"email": "not-an-email"}
+        )
+        self.assertEqual(invalid.status_code, 400)
+
+        first = self.client.post(
+            reverse("newsletter_subscribe"), {"email": "Garden@example.com"}
+        )
+        second = self.client.post(
+            reverse("newsletter_subscribe"), {"email": "garden@example.com"}
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(NewsletterSubscription.objects.count(), 1)
+        self.assertEqual(
+            NewsletterSubscription.objects.get().email, "garden@example.com"
+        )
+        self.assertIn("newsletter/unsubscribe/", first.json()["unsubscribe_url"])
+
+    def test_newsletter_unsubscribe_requires_confirmation_and_can_be_reversed(self):
+        subscription = NewsletterSubscription.objects.create(email="garden@example.com")
+        unsubscribe_url = reverse(
+            "newsletter_unsubscribe", args=[subscription.unsubscribe_token]
+        )
+
+        self.assertEqual(self.client.get(unsubscribe_url).status_code, 200)
+        response = self.client.post(unsubscribe_url)
+        self.assertEqual(response.status_code, 200)
+        subscription.refresh_from_db()
+        self.assertFalse(subscription.is_active)
+        self.assertIsNotNone(subscription.unsubscribed_at)
+
+        resubscribed = self.client.post(
+            reverse("newsletter_subscribe"), {"email": subscription.email}
+        )
+        self.assertEqual(resubscribed.status_code, 200)
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_active)
+        self.assertIsNone(subscription.unsubscribed_at)
+
+    def test_status_endpoint_reports_database_health(self):
+        response = self.client.get(reverse("system_status"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "operational")
 class CommunityCoreTests(TestCase):
     def make_user(self, username, email=None):
         return User.objects.create_user(
@@ -453,7 +518,8 @@ class CommunityCoreTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
         self.assertTrue(response["Cache-Control"].startswith("max-age=0"))
-        self.assertContains(response, 'const CACHE_NAME = "tree-garden-v2"')
+        self.assertContains(response, 'const CACHE_NAME = "tree-garden-v4"')
+        self.assertContains(response, '"/static/trees/footer.css"')
 
     def test_offline_page_cache_opt_in_is_limited_to_anonymous_requests(self):
         anonymous = self.client.get(reverse("tree_list"))

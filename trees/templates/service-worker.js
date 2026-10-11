@@ -1,6 +1,13 @@
-const CACHE_NAME = "tree-garden-v2";
+const CACHE_NAME = "tree-garden-v4";
 const APP_SHELL = [
   "/static/trees/app.css",
+  "/static/trees/navbar.css",
+  "/static/trees/footer.css",
+  "/static/trees/navbar.js",
+  "/static/trees/theme.js",
+  "/static/trees/footer.js",
+  "/static/trees/micro-interactions.js",
+  "/static/trees/app.js",
   "/static/trees/icons/garden.svg",
   "/static/trees/manifest.webmanifest",
   "/offline/",

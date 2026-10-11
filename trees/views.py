@@ -9,9 +9,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.db import DatabaseError
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm as DjangoPasswordChangeForm
 from django.contrib.auth.forms import UserCreationForm
+from django.urls import reverse
 from django.core.cache import cache
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.db import transaction
@@ -21,7 +23,9 @@ from django.db.models import Case, Count, F, IntegerField, Prefetch, Q, Sum, Val
 from django.db.models.functions import Coalesce
 from django.db.models.functions import Lower, TruncMonth
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from .models import (
     Comment,
     Achievement,
@@ -30,6 +34,7 @@ from .models import (
     HealthLog,
     HelpOffer,
     Notification,
+    NewsletterSubscription,
     Pledge,
     Profile,
     Reaction,
@@ -42,12 +47,91 @@ from .models import (
     UserAchievement,
     UserStreak,
 )
+
+
 from .forms import TreeForm, HealthLogForm, TaskForm
 from .forms_auth import EmailLoginForm, OnboardingForm, SignupForm
 from .forms_profile import ProfileForm, UserForm, PasswordChangeForm
 from .impact import refresh_user_impact_score
 from .ai_services import AIServiceError, analyze_tree_health, identify_species, image_digest
 from .gamification import record_activity, update_achievement_progress
+from ops.forms import ReportForm
+
+
+@require_POST
+def newsletter_subscribe(request):
+    email = request.POST.get("email", "").strip().lower()
+    try:
+        validate_email(email)
+    except ValidationError:
+        return JsonResponse(
+            {"success": False, "error": "Enter a valid email address."}, status=400
+        )
+
+    ip_address = request.META.get("REMOTE_ADDR", "unknown")
+    rate_key = f"newsletter-subscribe:{ip_address}"
+    submissions = cache.get(rate_key, 0)
+    if submissions >= 8:
+        return JsonResponse(
+            {"success": False, "error": "Too many attempts. Please try again later."},
+            status=429,
+        )
+    cache.set(rate_key, submissions + 1, timeout=60 * 10)
+
+    subscription, created = NewsletterSubscription.objects.get_or_create(
+        email=email,
+        defaults={"is_active": True},
+    )
+    if not created and not subscription.is_active:
+        subscription.is_active = True
+        subscription.unsubscribed_at = None
+        subscription.save(update_fields=["is_active", "unsubscribed_at"])
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "You’re subscribed. Thanks for growing with us.",
+            "unsubscribe_url": request.build_absolute_uri(
+                reverse("newsletter_unsubscribe", args=[subscription.unsubscribe_token])
+            ),
+        },
+        status=201 if created else 200,
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def newsletter_unsubscribe(request, token):
+    subscription = get_object_or_404(NewsletterSubscription, unsubscribe_token=token)
+    if request.method == "POST":
+        if subscription.is_active:
+            subscription.is_active = False
+            subscription.unsubscribed_at = timezone.now()
+            subscription.save(update_fields=["is_active", "unsubscribed_at"])
+        return render(request, "trees/newsletter_unsubscribed.html")
+    return render(
+        request, "trees/newsletter_unsubscribe.html", {"subscription": subscription}
+    )
+
+
+@require_GET
+def system_status(request):
+    database_operational = True
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except DatabaseError:
+        database_operational = False
+    status_code = 200 if database_operational else 503
+    return JsonResponse(
+        {
+            "status": "operational" if database_operational else "degraded",
+            "services": {
+                "database": "operational" if database_operational else "unavailable"
+            },
+        },
+        status=status_code,
+    )
 
 
 def landing(request):
@@ -58,7 +142,9 @@ def landing(request):
         request,
         "trees/landing.html",
         {
-            "community_tree_count": Tree.objects.count(),
+            "community_tree_count": Tree.objects.filter(
+                publication_status="published", moderation_status="visible"
+            ).count(),
             "grove_tree_count": tree_totals["total"] or 0,
             "public_farm_count": Organization.objects.filter(is_public=True).count(),
         },
@@ -196,9 +282,16 @@ def change_password(request):
 def user_profile(request, username):
     profile_user = get_object_or_404(get_user_model(), username__iexact=username)
     profile, _ = Profile.objects.get_or_create(user=profile_user)
-    posts = Tree.objects.filter(user=profile_user)
-    if not request.user.is_authenticated or request.user.pk != profile_user.pk:
-        posts = posts.filter(publication_status="published")
+    posts = Tree.objects.filter(
+        user=profile_user,
+        publication_status="published",
+        moderation_status="visible",
+    )
+    if request.user.is_authenticated and request.user.pk == profile_user.pk:
+        posts = Tree.objects.filter(
+            user=profile_user,
+            moderation_status__in=["visible", "hidden"],
+        )
     posts = posts.select_related("user").prefetch_related("media").order_by(
         "-published_at", "-updated_at"
     )
@@ -293,7 +386,9 @@ def discover(request):
         already_following = UserFollow.objects.filter(follower=request.user).values("following_id")
         people = people.exclude(pk__in=already_following)
     people = people.select_related("profile").order_by("-date_joined")[:12]
-    trees = Tree.objects.filter(publication_status="published").select_related("user").prefetch_related("media")
+    trees = Tree.objects.filter(
+        publication_status="published", moderation_status="visible"
+    ).select_related("user").prefetch_related("media")
     species = request.GET.get("species", "").strip()
     location = request.GET.get("location", "").strip()
     if species:
@@ -311,14 +406,14 @@ def discover(request):
         trees = trees.order_by("-published_at", "-updated_at")
     trees = trees[:30]
     species_options = (
-        Tree.objects.filter(publication_status="published")
+        Tree.objects.filter(publication_status="published", moderation_status="visible")
         .exclude(species="")
         .values_list("species", flat=True)
         .distinct()
         .order_by("species")
     )
     location_options = (
-        Tree.objects.filter(publication_status="published")
+        Tree.objects.filter(publication_status="published", moderation_status="visible")
         .exclude(district="")
         .values_list("district", flat=True)
         .distinct()
@@ -348,7 +443,9 @@ def search(request):
             | Q(first_name__icontains=query)
             | Q(last_name__icontains=query)
         ).select_related("profile")[:20]
-        posts = Tree.objects.filter(publication_status="published").select_related(
+        posts = Tree.objects.filter(
+            publication_status="published", moderation_status="visible"
+        ).select_related(
             "user"
         ).prefetch_related("hashtags", "media")
         if query.startswith("#"):
@@ -444,7 +541,11 @@ def leaderboard(request):
 
 @login_required
 def garden_insights(request):
-    user_trees = Tree.objects.filter(user=request.user, publication_status="published")
+    user_trees = Tree.objects.filter(
+        user=request.user,
+        publication_status="published",
+        moderation_status="visible",
+    )
     since = timezone.now() - timedelta(days=180)
     monthly_counts = list(
         user_trees.filter(published_at__gte=since)
@@ -550,11 +651,17 @@ def daily_engagement_cron(request):
 
 
 def tree_list(request):
-    trees = Tree.objects.filter(publication_status="published").select_related(
+    trees = Tree.objects.filter(
+        publication_status="published", moderation_status="visible"
+    ).select_related(
         'user', 'user__profile'
     ).prefetch_related(
         Prefetch('reactions', queryset=Reaction.objects.select_related('user').order_by('-created_at')),
-        Prefetch('comments', queryset=Comment.objects.select_related('user').order_by('created_at')),
+        Prefetch(
+            'comments',
+            queryset=Comment.objects.filter(moderation_status="visible")
+            .select_related('user').order_by('created_at'),
+        ),
         Prefetch('media'),
         Prefetch('health_logs', queryset=HealthLog.objects.order_by('-date', '-pk')),
         Prefetch(
@@ -728,15 +835,20 @@ def add_tree(request):
 
 @login_required
 def tree_detail(request, pk):
-    visible_trees = Tree.objects.filter(publication_status="published")
+    visible_trees = Tree.objects.filter(
+        Q(publication_status="published", moderation_status="visible")
+    )
     if request.user.is_authenticated:
         visible_trees = Tree.objects.filter(
-            Q(publication_status="published") | Q(user=request.user)
+            Q(publication_status="published", moderation_status="visible")
+            | Q(user=request.user, moderation_status__in=["visible", "hidden"])
         )
     tree = get_object_or_404(visible_trees, pk=pk)
     health_logs = tree.health_logs.all().order_by('-date')
     tasks = tree.tasks.all().order_by('scheduled_date')
-    comments = tree.comments.select_related('user').order_by('created_at')
+    comments = tree.comments.filter(
+        moderation_status="visible"
+    ).select_related('user').order_by('created_at')
     reactions = tree.reactions.select_related('user').order_by('-created_at')
     tree.latest_health_analysis = tree.health_analyses.first()
     tree.health_issues_json = json.dumps(tree.latest_health_analysis.issues) if tree.latest_health_analysis else '[]'
@@ -821,6 +933,7 @@ def tree_detail(request, pk):
         'comments': comments,
         'reactions': reactions,
         'impact_reaction_types': Reaction.REACTION_TYPES,
+        'report_form': ReportForm(),
     })
 
 @login_required
@@ -906,7 +1019,10 @@ def react_or_comment(request):
     form_type = request.POST.get('form_type')
     if not tree_id or not form_type:
         return JsonResponse({'success': False, 'error': 'Missing tree_id or form_type.'}, status=400)
-    tree = get_object_or_404(Tree, pk=tree_id)
+    tree = get_object_or_404(
+        Tree.objects.filter(publication_status="published", moderation_status="visible"),
+        pk=tree_id,
+    )
     if form_type == 'react':
         reaction_type = request.POST.get('reaction_type')
         if reaction_type not in dict(Reaction.REACTION_TYPES):
@@ -984,7 +1100,9 @@ def react_or_comment(request):
             return JsonResponse({'success': False, 'error': 'Missing comment_text.'}, status=400)
         Comment.objects.create(tree=tree, user=request.user, text=text)
         update_achievement_progress(tree.user)
-        comments = tree.comments.select_related('user').order_by('created_at')
+        comments = tree.comments.filter(
+            moderation_status="visible"
+        ).select_related('user').order_by('created_at')
         if request.headers.get('HX-Request') == 'true':
             return render(request, 'trees/partials/comment_list.html', {'comments': comments})
         return JsonResponse({'success': True})

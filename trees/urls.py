@@ -4,6 +4,13 @@ from . import views
 from . import views_additional
 
 urlpatterns = [
+    path('api/status/', views.system_status, name='system_status'),
+    path('api/newsletter/subscribe/', views.newsletter_subscribe, name='newsletter_subscribe'),
+    path(
+        'newsletter/unsubscribe/<uuid:token>/',
+        views.newsletter_unsubscribe,
+        name='newsletter_unsubscribe',
+    ),
     path('', views.landing, name='home'),
     path('community/', views.tree_list, name='tree_list'),
     path('discover/', views.discover, name='discover'),

@@ -9,24 +9,28 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Tree Garden">
+    <meta name="apple-mobile-web-app-title" content="Canopy">
     <link rel="manifest" href="{% static 'trees/manifest.webmanifest' %}">
     <link rel="icon" href="{% static 'trees/icons/garden.svg' %}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{% static 'trees/icons/garden.svg' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>{% block title %}Tree Plantation Tracker{% endblock %}</title>
+    <title>{% block title %}Canopy{% endblock %}</title>
     <script>
         (function () {
-            const preference = localStorage.getItem('theme');
-            const dark = preference ? preference === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let preference = null;
+            try { preference = localStorage.getItem('theme'); } catch (error) { console.warn('Theme preference could not be read.', error); }
+            const dark = preference === 'dark' || ((!preference || preference === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             document.documentElement.classList.toggle('dark', dark);
         }());
     </script>
     <link href="{% static 'trees/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'trees/custom-overrides.css' %}" rel="stylesheet">
     <link href="{% static 'trees/app.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/navbar.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/footer.css' %}" rel="stylesheet">
     <script src="{% static 'trees/micro-interactions.js' %}" defer></script>
 </head>
 <body>
@@ -38,34 +42,9 @@
     <symbol id="icon-insight" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 3 3 6-7"/><path d="M16 6h4v4"/></symbol>
 </svg>
 
-<nav class="site-nav">
-    <div class="site-nav-inner">
-        <a class="site-brand" href="{% url 'home' %}" aria-label="Tree Plantation Tracker">
-            <svg class="brand-icon" aria-hidden="true"><use href="#icon-planted"></use></svg>
-            <span class="site-brand-name">Tree Plantation Tracker</span>
-        </a>
-        <div class="site-nav-actions">
-            <a href="{% url 'tree_list' %}" class="nav-link">Community</a>
-            <a href="{% url 'search' %}" class="nav-link">Search</a>
-            <a href="{% url 'daily_challenges' %}" class="nav-link">Challenges</a>
-            <a href="{% url 'leaderboard' %}" class="nav-link">Leaderboard</a>
-            {% if user.is_authenticated %}<a href="{% url 'garden_insights' %}" class="nav-link">Insights</a><a href="{% url 'achievements' %}" class="nav-link">Badges</a>{% endif %}
-            <a href="{% url 'grove:workspace' %}" class="nav-link">Grove</a>
-            <a href="{% url 'grove_market:listings' %}" class="nav-link">Marketplace</a>
-            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
-                <span aria-hidden="true">◐</span><span class="theme-label">Theme</span>
-            </button>
-            {% if user.is_authenticated %}
-                <span class="nav-greeting">Hi, {{ user.username }}</span>
-                <a href="{% url 'profile' %}" class="nav-link">Profile</a>
-                <a href="{% url 'logout' %}" class="nav-link nav-link-accent">Logout</a>
-            {% else %}
-                <a href="{% url 'login' %}" class="nav-link">Login</a>
-                <a href="{% url 'signup_step1' %}" class="nav-link nav-link-accent">Join</a>
-            {% endif %}
-        </div>
-    </div>
-</nav>
+{% include "partials/_navbar_desktop.html" %}
+{% include "partials/_navbar_mobile_top.html" %}
+{% include "partials/_mobile_drawer.html" %}
 
 <div class="page-container">
     {% if messages %}
@@ -75,23 +54,13 @@
     {% endif %}
     {% block content %}{% endblock %}
 </div>
-<nav class="mobile-bottom-nav" aria-label="{% trans 'Main navigation' %}">
-    <a class="mobile-nav-item{% if request.path == '/community/' %} is-active{% endif %}" href="{% url 'tree_list' %}" aria-label="{% trans 'Home' %}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg><span>{% trans "Home" %}</span>
-    </a>
-    <a class="mobile-nav-item{% if request.path == '/discover/' %} is-active{% endif %}" href="{% url 'discover' %}" aria-label="{% trans 'Discover' %}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4m-7-8 5 2-2 5-3-7Z"/></svg><span>{% trans "Discover" %}</span>
-    </a>
-    <a class="mobile-nav-item mobile-nav-post" href="{% url 'add_tree' %}" aria-label="{% trans 'Create a post' %}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>{% trans "Post" %}</span>
-    </a>
-    <a class="mobile-nav-item{% if request.path|slice:':14' == '/notifications' %} is-active{% endif %}" href="{% url 'notifications' %}" aria-label="{% trans 'Notifications' %}">
-        <span class="mobile-nav-icon-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"/></svg>{% if mobile_unread_notifications %}<span class="mobile-nav-badge">{{ mobile_unread_notifications }}</span>{% endif %}</span><span>{% trans "Alerts" %}</span>
-    </a>
-    <a class="mobile-nav-item{% if request.path|slice:':3' == '/u/' or request.path == '/profile/' %} is-active{% endif %}" href="{% if user.is_authenticated %}{% url 'user_profile' user.username %}{% else %}{% url 'login' %}{% endif %}" aria-label="{% trans 'Profile' %}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>{% trans "Profile" %}</span>
-    </a>
-</nav>
+{% include "partials/_footer.html" %}
+{% if request.resolver_match.url_name != 'tree_detail' and request.resolver_match.url_name != 'add_tree' %}
+    {% include "partials/_navbar_mobile_bottom.html" %}
+    {% include "partials/_post_sheet.html" %}
+    {% include "partials/_theme_toggle.html" %}
+{% endif %}
+{% include "partials/_search_overlay.html" %}
 <div class="install-app-prompt" id="install-app-prompt" hidden>
     <span><strong>{% trans "Take your garden with you" %}</strong><small>{% trans "Install the app for a home-screen shortcut." %}</small></span>
     <button id="install-app-button" type="button">{% trans "Install" %}</button>
@@ -100,26 +69,9 @@
 <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 <script src="{% static 'trees/app.js' %}" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
-<script>
-    (function () {
-        const toggle = document.getElementById('theme-toggle');
-        if (!toggle) return;
-        const updateTheme = (dark) => {
-            document.documentElement.classList.toggle('dark', dark);
-            toggle.setAttribute('aria-pressed', String(dark));
-            toggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
-        };
-        updateTheme(document.documentElement.classList.contains('dark'));
-        toggle.addEventListener('click', () => {
-            const dark = !document.documentElement.classList.contains('dark');
-            localStorage.setItem('theme', dark ? 'dark' : 'light');
-            updateTheme(dark);
-        });
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
-            if (!localStorage.getItem('theme')) updateTheme(event.matches);
-        });
-    }());
-</script>
+<script src="{% static 'trees/navbar.js' %}" defer></script>
+<script src="{% static 'trees/theme.js' %}" defer></script>
+<script src="{% static 'trees/footer.js' %}" defer></script>
 <script>
     if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("{% url 'service_worker' %}").catch((error) => console.warn("Offline support could not be enabled.", error)));

@@ -148,11 +148,47 @@ Start a business workspace at `/grove/`. CSV batch imports accept `species`,
 email invitations are not configured. This is an assumption-led Bangladesh MVP;
 validate workflows with local farm partners before production rollout.
 
+## Moderation operations
+
+The purpose-built moderator console lives at `/ops/`; Django Admin remains at
+`/admin/` for deeper data operations. Run `python manage.py migrate` to install
+the Ops schema and create the `Ops Admin`, `Moderator`, `Support`, and `Analyst`
+groups. Assign accounts to these groups from Django Admin. Superusers and
+`Ops Admin` can read and moderate; `Moderator` can review reports and AI flags;
+`Support` and `Analyst` are read-only. Ordinary accounts cannot access the
+console.
+
+Members can report public posts, comments, and profiles. Moderators can dismiss
+reports, warn an account via an in-app notification, or hide/remove a post or
+comment. Every decision requires a reason and stores a before/after snapshot in
+the read-only audit interface. Hidden and removed content is excluded from
+public feeds and search; owners can still view their hidden posts. AI flags are
+reviewable records, but automated content detection and Perspective API
+integration are not enabled in this MVP.
+
+## Footer and newsletter
+
+The shared Canopy footer includes responsive navigation, the browser-native
+PWA install prompt where supported, language selection, and a database-backed
+newsletter opt-in list. Newsletter emails are not sent yet; configure a
+transactional email provider before offering newsletter delivery. Subscribers
+can unsubscribe from the confirmation link shown after signup. Django Admin
+lists subscriber addresses and subscription status.
+
+Optional footer destinations are configured with `CANOPY_SUPPORT_EMAIL`,
+`CANOPY_FACEBOOK_URL`, `CANOPY_INSTAGRAM_URL`, `CANOPY_X_URL`,
+`CANOPY_YOUTUBE_URL`, `CANOPY_LINKEDIN_URL`, `CANOPY_GOOGLE_PLAY_URL`,
+`CANOPY_PRIVACY_URL`, `CANOPY_TERMS_URL`, `CANOPY_COOKIE_POLICY_URL`,
+`CANOPY_ACCESSIBILITY_URL`, and `CANOPY_GUIDELINES_URL`. Social, store, legal,
+and guidelines links are omitted until a valid HTTPS destination is configured.
+The system-status indicator currently checks database connectivity only.
+
 ## Folder Structure
 - `tracker/` - Django project settings
 - `trees/` - Community app (models, views, templates, forms)
 - `grove/` - Farm workspace, plots, batches, tasks, memberships, and health analyses
 - `grove_market/`, `grove_finance/`, `grove_carbon/`, `grove_compliance/` - Modular business features
+- `ops/` - Role-restricted moderation console, reports, AI flag queue, and audit log
 - `media/` - Uploaded images (tree and profile pictures)
 - `templates/` - HTML templates (feed, auth, profile, etc.)
 
