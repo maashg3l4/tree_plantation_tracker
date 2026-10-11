@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Create a Grove workspace{% endblock %}
+{% block content %}
+<main class="grove-shell grove-form-shell">
+  <p class="eyebrow">Grove · business setup</p><h1>Create your farm workspace</h1>
+  <p class="grove-muted">Start with the basics; you can add land and team members next.</p>
+  <form method="post" enctype="multipart/form-data" class="grove-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}<label class="grove-field"><span>{{ field.label }}</span>{{ field }}{{ field.errors }}</label>{% endfor %}
+    <button class="primary-action" type="submit">Create workspace</button>
+  </form>
+</main>
+{% endblock %}

@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "Tree Plantation Tracker",
+  "short_name": "Tree Garden",
+  "description": "Grow a greener future with your gardening community.",
+  "start_url": "/community/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f7f8f5",
+  "theme_color": "#14532d",
+  "lang": "en",
+  "categories": ["social", "lifestyle"],
+  "icons": [
+    {
+      "src": "/static/trees/icons/garden.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

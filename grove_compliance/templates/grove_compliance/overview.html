@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Compliance vault · {{ org.name }}{% endblock %}
+{% block content %}
+<main class="grove-shell"><p class="eyebrow"><a href="{% url 'grove:dashboard' org.slug %}">{{ org.name }}</a> · records</p>
+  <header class="grove-page-heading"><div><h1>Certification &amp; compliance vault</h1><p>Keep certificates and supporting documents available to authorized workspace members.</p></div>{% if membership.role == "owner" or membership.role == "manager" %}<a class="primary-action" href="{% url 'grove_compliance:upload_document' org.slug %}">+ Add document</a>{% endif %}</header>
+  <section class="grove-panel">{% for item in documents %}<div class="grove-list-row"><span class="grove-plot-icon" aria-hidden="true">▤</span><span><strong>{{ item.title }}</strong><small>{{ item.certification_type }}{% if item.issued_by %} · {{ item.issued_by }}{% endif %}{% if item.expires_on %} · Expires {{ item.expires_on }}{% endif %}</small></span><a href="{% url 'grove_compliance:download_document' org.slug item.pk %}">Download</a></div>{% empty %}<p class="grove-empty-inline">No documents have been added to the vault.</p>{% endfor %}</section>
+  <p class="grove-disclaimer">Access is limited to organization members. Check issuing-body requirements; uploads are not independently validated.</p>
+</main>
+{% endblock %}

@@ -26,6 +26,10 @@
             {{ form.name }}
         </div>
         <div class="mb-3">
+            {{ form.caption.label_tag }}
+            {{ form.caption }}
+        </div>
+        <div class="mb-3">
             {{ form.species.label_tag }}
             {{ form.species }}
         </div>
@@ -70,7 +74,11 @@
                 <ol id="species-predictions" class="species-predictions"></ol>
             </div>
         </div>
-        <button type="submit" class="btn btn-success fade-in-up" id="submit-btn">Submit</button>
+        <div class="mb-3">{{ form.extra_images.label_tag }}{{ form.extra_images }}<small class="form-text">Add up to 9 additional JPEG, PNG, or WebP photos (10 MB each).</small></div>
+        <div class="mb-3">{{ form.video.label_tag }}{{ form.video }}<small class="form-text">Optional MP4 or WebM video, up to 50 MB.</small></div>
+        <div class="mb-3">{{ form.scheduled_publish_at.label_tag }}{{ form.scheduled_publish_at }}<small class="form-text">Leave blank to publish now, or schedule a future post.</small></div>
+        <div class="mb-3 form-check">{{ form.save_as_draft }}{{ form.save_as_draft.label_tag }}</div>
+        <button type="submit" class="btn btn-success fade-in-up" id="submit-btn">Share your tree</button>
     </form>
 </div>
 

@@ -11,7 +11,7 @@
         {% if user.is_authenticated %}
             <a class="primary-action" href="{% url 'add_tree' %}">Share a tree</a>
         {% else %}
-            <a class="primary-action" href="{% url 'register' %}">Join the community</a>
+            <a class="primary-action" href="{% url 'signup_step1' %}">Join the community</a>
         {% endif %}
     </header>
     <div class="feed-list">
@@ -36,9 +36,12 @@
                 </header>
                 <div class="tree-card-content">
                     <h2><a href="{% url 'tree_detail' tree.id %}">{{ tree.name }}{% if tree.species %}<span> · {{ tree.species }}</span>{% endif %}</a></h2>
+                    {% if tree.caption %}<p class="tree-caption">{{ tree.caption|linebreaksbr }}</p>{% endif %}
                     {% if tree.image %}
                         <img src="{{ tree.image.url }}" class="tree-photo" alt="A {{ tree.species|default:'tree' }} named {{ tree.name }}">
                     {% endif %}
+                    {% for media in tree.media.all %}{% if media.media_type == "video" %}<video class="tree-photo" controls preload="metadata"><source src="{{ media.file.url }}"></video>{% else %}<img src="{{ media.file.url }}" class="tree-photo" loading="lazy" alt="More of {{ tree.name }}">{% endif %}{% endfor %}
+                    {% if tree.hashtags.all %}<p class="tree-hashtags">{% for hashtag in tree.hashtags.all %}<a href="{% url 'search' %}?q=%23{{ hashtag.tag|urlencode }}">#{{ hashtag.tag }}</a> {% endfor %}</p>{% endif %}
                     <dl class="tree-facts">
                         <div><dt>Location</dt><dd>
                             {% if tree.latitude and tree.longitude %}

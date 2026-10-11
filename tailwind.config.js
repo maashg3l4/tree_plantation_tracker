@@ -6,6 +6,8 @@ module.exports = {
   content: [
     './trees/templates/**/*.html',
     './trees/static/trees/**/*.js',
+    './grove/templates/**/*.html',
+    './grove_*/templates/**/*.html',
   ],
   theme: {
     extend: {

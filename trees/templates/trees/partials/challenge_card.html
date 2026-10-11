@@ -1,0 +1,9 @@
+<article class="challenge-card">
+  <span class="challenge-sprout" aria-hidden="true">✳</span>
+  <p class="eyebrow">{{ challenge.get_challenge_type_display }} · {{ challenge.category|title }}</p>
+  <h2>{{ challenge.title }}</h2><p>{{ challenge.description }}</p>
+  {% if user.is_authenticated %}
+    {% if completed %}<div class="challenge-complete" role="status">Challenge completed — well done! 🌱</div>
+    {% else %}<form method="post" action="{% url 'complete_daily_challenge' challenge.pk %}">{% csrf_token %}<label for="challenge-note-{{ challenge.pk }}">A note about your challenge <span>(optional)</span></label><textarea id="challenge-note-{{ challenge.pk }}" name="note" maxlength="240" rows="3" placeholder="What did you notice or do?"></textarea><button class="auth-submit" type="submit">Mark as complete <span aria-hidden="true">→</span></button></form>{% endif %}
+  {% else %}<a class="auth-submit" href="{% url 'login' %}?next={% url 'daily_challenges' %}">Log in to join</a>{% endif %}
+</article>

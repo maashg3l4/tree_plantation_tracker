@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Achievements{% endblock %}
+{% block content %}
+<main class="phase4-page">
+  <header class="phase4-heading"><p class="eyebrow">Every little action grows</p><h1>Your achievements</h1><p>Badges celebrate the trees you share and the care you give your community.</p></header>
+  <section class="achievement-grid">{% for record in unlocked %}<article class="achievement-card tier-{{ record.achievement.tier }}"><span class="achievement-icon" aria-hidden="true">{{ record.achievement.icon }}</span><span class="achievement-tier">{{ record.achievement.get_tier_display }}</span><h2>{{ record.achievement.name }}</h2><p>{{ record.achievement.description }}</p><strong>+{{ record.achievement.points }} points</strong></article>{% empty %}<p class="phase4-muted">Your first badge is waiting—share a tree or welcome a new follower.</p>{% endfor %}</section>
+  <section class="phase4-section"><h2>Still growing</h2><div class="achievement-grid">{% for item in locked %}<article class="achievement-card achievement-locked tier-{{ item.achievement.tier }}"><span class="achievement-icon" aria-hidden="true">{{ item.achievement.icon }}</span><span class="achievement-tier">{{ item.achievement.get_tier_display }}</span><h2>{{ item.achievement.name }}</h2><p>{{ item.achievement.description }}</p><div class="achievement-progress"><span style="width:{% widthratio item.progress item.achievement.criteria.threshold 100 %}%"></span></div><small>{{ item.progress }} / {{ item.achievement.criteria.threshold }}</small></article>{% empty %}<p class="phase4-muted">You’ve unlocked every available achievement. Incredible growing!</p>{% endfor %}</div></section>
+</main>
+{% endblock %}

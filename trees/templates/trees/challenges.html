@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Daily Garden Challenge{% endblock %}
+{% block content %}
+<main class="phase4-page challenge-page">
+  <header class="phase4-heading"><p class="eyebrow">{{ challenge.date|date:"l, F j" }} · {{ challenge.category|title }}</p><h1>Today’s Garden Challenge</h1><p>Small steps count. Take a moment to grow something good today.</p></header>
+  {% include "trees/partials/challenge_card.html" with challenge=challenge completed=completed user=user %}
+  <h2 class="phase4-subheading">This week</h2>
+  {% include "trees/partials/challenge_card.html" with challenge=weekly_challenge completed=weekly_completed user=user %}
+  <section class="phase4-section"><h2>Recent challenges</h2><div class="challenge-history">{% for item in recent_challenges %}<article><small>{{ item.date|date:"M j" }}</small><strong>{{ item.title }}</strong><span>{{ item.participants.count }} joined</span></article>{% empty %}<p class="phase4-muted">New challenges arrive each day.</p>{% endfor %}</div></section>
+</main>
+{% endblock %}

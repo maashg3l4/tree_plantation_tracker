@@ -4,9 +4,16 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class Tree(models.Model):
+    PUBLICATION_STATUS = [
+        ("published", "Published"),
+        ("draft", "Draft"),
+        ("scheduled", "Scheduled"),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trees')
     name = models.CharField(max_length=100)
     species = models.CharField(max_length=100, blank=True)  # Make species optional
+    caption = models.TextField(blank=True)
     country = models.CharField(max_length=100, blank=True)
     division = models.CharField(max_length=100, blank=True)  # state/province/region
     district = models.CharField(max_length=100, blank=True)
@@ -20,11 +27,39 @@ class Tree(models.Model):
     ai_confidence = models.FloatField(null=True, blank=True)
     ai_species_corrected = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
+    publication_status = models.CharField(
+        max_length=12, choices=PUBLICATION_STATUS, default="published", db_index=True
+    )
+    scheduled_publish_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
     is_dead = models.BooleanField(default=False)
     death_reason = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.species})"
+
+
+class TreeMedia(models.Model):
+    MEDIA_TYPES = [("image", "Image"), ("video", "Video")]
+    tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name="media")
+    file = models.FileField(upload_to="tree_media/%Y/%m/")
+    media_type = models.CharField(max_length=8, choices=MEDIA_TYPES)
+    position = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "pk"]
+
+
+class TreeHashtag(models.Model):
+    tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name="hashtags")
+    tag = models.CharField(max_length=50)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["tree", "tag"], name="unique_tree_hashtag"),
+        ]
+        indexes = [models.Index(fields=["tag"], name="tree_hashtag_tag_idx")]
 
 
 class HealthLog(models.Model):
@@ -152,14 +187,31 @@ class UserImpactScore(models.Model):
 
 
 class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('reaction', 'Reaction'),
+        ('comment', 'Comment'),
+        ('follow', 'Follow'),
+        ('mention', 'Mention'),
+        ('system', 'System'),
+        ('streak', 'Streak reminder'),
+        ('challenge', 'Challenge'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     actor = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='sent_tree_notifications',
+        null=True,
+        blank=True,
     )
-    tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name='notifications')
+    tree = models.ForeignKey(
+        Tree, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True
+    )
     message = models.CharField(max_length=255)
+    notification_type = models.CharField(
+        max_length=20, choices=NOTIFICATION_TYPES, default='reaction'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
@@ -182,11 +234,157 @@ class TreeHealthAnalysis(models.Model):
 
 
 class Profile(models.Model):
+    ACCOUNT_TYPES = [("personal", "Personal"), ("business", "Business / Farm")]
+    GARDEN_INTERESTS = [
+        ("trees", "Trees"),
+        ("vegetables", "Vegetables"),
+        ("flowers", "Flowers"),
+        ("herbs", "Herbs"),
+        ("indoor", "Indoor plants"),
+        ("bonsai", "Bonsai"),
+        ("succulents", "Succulents"),
+        ("fruit", "Fruit trees"),
+        ("organic", "Organic farming"),
+        ("other", "Other"),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default='personal')
+    cover_image = models.ImageField(upload_to='profile_covers/', blank=True)
+    bio = models.CharField(max_length=160, blank=True)
+    location = models.CharField(max_length=120, blank=True)
+    website = models.URLField(max_length=200, blank=True)
+    social_links = models.JSONField(default=list, blank=True)
+    interests = models.JSONField(default=list, blank=True)
+    language = models.CharField(
+        max_length=2, choices=[("en", "English"), ("bn", "বাংলা")], default="en"
+    )
+    is_verified = models.BooleanField(default=False)
+    username_changed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Profile of {self.user.username}"
+
+
+class UserFollow(models.Model):
+    follower = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='following_relationships'
+    )
+    following = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='follower_relationships'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['follower', 'following'], name='unique_user_follow'
+            ),
+            models.CheckConstraint(
+                check=~models.Q(follower=models.F('following')), name='prevent_self_follow'
+            ),
+        ]
+        ordering = ['-created_at']
+
+
+class Achievement(models.Model):
+    TIERS = [
+        ("bronze", "Bronze"),
+        ("silver", "Silver"),
+        ("gold", "Gold"),
+        ("platinum", "Platinum"),
+    ]
+
+    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=80)
+    description = models.CharField(max_length=240)
+    icon = models.CharField(max_length=40, default="sprout")
+    tier = models.CharField(max_length=12, choices=TIERS, default="bronze")
+    criteria = models.JSONField(default=dict)
+    points = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["points", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class UserAchievement(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="achievements")
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name="unlocks")
+    progress = models.PositiveIntegerField(default=0)
+    unlocked_at = models.DateTimeField(null=True, blank=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "achievement"], name="unique_user_achievement"),
+        ]
+        ordering = ["-unlocked_at", "achievement__points"]
+
+
+class UserStreak(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="streak")
+    current_login = models.PositiveIntegerField(default=0)
+    longest_login = models.PositiveIntegerField(default=0)
+    current_post = models.PositiveIntegerField(default=0)
+    longest_post = models.PositiveIntegerField(default=0)
+    current_reaction = models.PositiveIntegerField(default=0)
+    longest_reaction = models.PositiveIntegerField(default=0)
+    freeze_available = models.PositiveSmallIntegerField(default=1)
+    freeze_month = models.DateField(null=True, blank=True)
+    last_login_date = models.DateField(null=True, blank=True)
+    last_post_date = models.DateField(null=True, blank=True)
+    last_reaction_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Streaks for {self.user.username}"
+
+
+class DailyChallenge(models.Model):
+    CHALLENGE_TYPES = [("daily", "Daily"), ("weekly", "Weekly")]
+
+    date = models.DateField()
+    title = models.CharField(max_length=120)
+    description = models.CharField(max_length=300)
+    category = models.CharField(max_length=40, default="garden")
+    challenge_type = models.CharField(
+        max_length=8, choices=CHALLENGE_TYPES, default="daily"
+    )
+    generated_by = models.CharField(max_length=40, default="curated")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["date", "challenge_type"], name="unique_challenge_period"
+            ),
+        ]
+
+
+class ChallengeParticipation(models.Model):
+    challenge = models.ForeignKey(
+        DailyChallenge, on_delete=models.CASCADE, related_name="participants"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="challenge_participations"
+    )
+    completed_at = models.DateTimeField(auto_now_add=True)
+    note = models.CharField(max_length=240, blank=True)
+    post = models.ForeignKey(
+        Tree, on_delete=models.SET_NULL, null=True, blank=True, related_name="challenge_entries"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["challenge", "user"], name="unique_user_daily_challenge"
+            ),
+        ]
 
 
 # Automatically create or update Profile when User is saved

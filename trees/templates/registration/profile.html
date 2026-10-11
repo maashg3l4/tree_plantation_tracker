@@ -59,14 +59,15 @@
       {% csrf_token %}
       {{ user_form.as_p }}
       {{ profile_form.as_p }}
+      {% if profile.account_type == "personal" %}
+        <p><a class="secondary-action" href="{% url 'grove:workspace' %}">Create or join a Grove business workspace</a></p>
+      {% endif %}
       <div class="mb-3">
-        <label for="id_profile_picture" class="form-label">Profile Picture</label><br>
         {% if profile.profile_picture %}
           <img src="{{ profile.profile_picture.url }}" class="img-thumbnail mb-2" style="max-width: 120px;">
         {% else %}
           <img src="https://ui-avatars.com/api/?name={{ user.username }}" class="img-thumbnail mb-2" style="max-width: 120px;">
         {% endif %}
-        {{ form.profile_picture }}
       </div>
       <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
     </form>

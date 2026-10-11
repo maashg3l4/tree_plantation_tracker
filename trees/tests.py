@@ -1,7 +1,7 @@
 import hashlib
 import json
 import tempfile
-from datetime import date
+from datetime import date, timedelta
 from io import BytesIO
 from unittest.mock import patch
 
@@ -9,18 +9,30 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 
 from .ai_services import AIServiceError, identify_species
+from .daily_jobs import publish_scheduled_posts
+from .gamification import record_activity, update_achievement_progress
 from .impact import refresh_user_impact_score
 from .models import (
+    Achievement,
+    ChallengeParticipation,
+    DailyChallenge,
     HelpOffer,
     Notification,
     Pledge,
+    Profile,
     Reaction,
     Tree,
+    TreeHashtag,
+    TreeMedia,
     TreeHealthAnalysis,
+    UserAchievement,
+    UserFollow,
     UserImpactScore,
+    UserStreak,
 )
 
 
@@ -292,4 +304,379 @@ class AIAnalysisTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Health 92/100')
         self.assertContains(response, 'data-issues="[&quot;Dry leaves&quot;, &quot;Low contrast&quot;]"')
-# Create your tests here.
+class CommunityCoreTests(TestCase):
+    def make_user(self, username, email=None):
+        return User.objects.create_user(
+            username=username,
+            email=email or f"{username}@example.com",
+            password="A-strong-garden-password-42!",
+        )
+
+    def test_signup_creates_account_and_starts_onboarding(self):
+        response = self.client.post(
+            reverse("signup_step2"),
+            {
+                "email": "newgardener@example.com",
+                "password1": "A-strong-garden-password-42!",
+                "password2": "A-strong-garden-password-42!",
+                "accept_terms": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("onboarding"))
+        user = User.objects.get(email="newgardener@example.com")
+        self.assertTrue(user.check_password("A-strong-garden-password-42!"))
+        self.assertTrue(Profile.objects.filter(user=user).exists())
+        self.assertTrue(self.client.session["onboarding_incomplete"])
+
+    def test_legacy_register_route_redirects_to_new_signup_experience(self):
+        response = self.client.get(reverse("register"))
+
+        self.assertRedirects(response, reverse("signup_step1"))
+
+    def test_onboarding_accepts_underscores_and_sets_profile(self):
+        user = self.make_user("temporary-account")
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("onboarding"),
+            {
+                "first_name": "Garden",
+                "last_name": "Friend",
+                "username": "green_friend",
+                "bio": "Growing native trees.",
+                "location": "Dhaka",
+                "interests": ["trees", "flowers"],
+            },
+        )
+
+        self.assertRedirects(response, reverse("user_profile", args=["green_friend"]))
+        user.refresh_from_db()
+        user.profile.refresh_from_db()
+        self.assertEqual(user.username, "green_friend")
+        self.assertEqual(user.profile.interests, ["trees", "flowers"])
+        self.assertEqual(user.profile.bio, "Growing native trees.")
+
+    def test_username_availability_is_case_insensitive_and_allows_current_user(self):
+        user = self.make_user("GreenFriend")
+        self.make_user("OtherGardener")
+        self.client.force_login(user)
+
+        same_user = self.client.get(
+            reverse("username_available"), {"username": user.username}
+        )
+        another_user = self.client.get(
+            reverse("username_available"), {"username": "OTHERGARDENER"}
+        )
+        invalid_handle = self.client.get(
+            reverse("username_available"), {"username": "two words"}
+        )
+
+        self.assertTrue(same_user.json()["available"])
+        self.assertFalse(another_user.json()["available"])
+        self.assertFalse(invalid_handle.json()["available"])
+
+    def test_follow_creates_notification_and_can_be_removed(self):
+        follower = self.make_user("first-gardener")
+        target = self.make_user("second-gardener")
+        self.client.force_login(follower)
+        url = reverse("toggle_follow", args=[target.username])
+
+        created = self.client.post(url)
+        removed = self.client.post(url)
+
+        self.assertEqual(created.status_code, 200)
+        self.assertTrue(created.json()["following"])
+        self.assertEqual(created.json()["follower_count"], 1)
+        self.assertEqual(removed.status_code, 200)
+        self.assertFalse(removed.json()["following"])
+        self.assertFalse(UserFollow.objects.exists())
+        self.assertEqual(
+            Notification.objects.filter(user=target, notification_type="follow").count(), 1
+        )
+
+    def test_follow_rejects_self_follow(self):
+        user = self.make_user("solo-gardener")
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("toggle_follow", args=[user.username]))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(UserFollow.objects.exists())
+
+    def test_follow_button_has_csrf_token_for_ajax_request(self):
+        follower = self.make_user("csrf-follower")
+        target = self.make_user("csrf-target")
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(follower)
+        client.get(reverse("user_profile", args=[target.username]))
+        csrf_token = client.cookies["csrftoken"].value
+
+        response = client.post(
+            reverse("toggle_follow", args=[target.username]),
+            HTTP_X_CSRFTOKEN=csrf_token,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["following"])
+
+    def test_password_reset_flow_has_named_routes(self):
+        self.make_user("password-gardener")
+
+        response = self.client.post(
+            reverse("password_reset"), {"email": "password-gardener@example.com"}
+        )
+
+        self.assertRedirects(response, reverse("password_reset_done"))
+
+    def test_email_login_is_case_insensitive_and_rejects_external_next_url(self):
+        user = self.make_user("email-login-gardener", "gardener@example.com")
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "email": "GARDENER@example.com",
+                "password": "A-strong-garden-password-42!",
+                "remember_me": "on",
+                "next": "https://attacker.example/",
+            },
+        )
+
+        self.assertRedirects(response, reverse("tree_list"))
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+        self.assertEqual(response.wsgi_request.user.pk, user.pk)
+
+    def test_service_worker_is_served_from_root_scope(self):
+        response = self.client.get(reverse("service_worker"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/javascript")
+        self.assertTrue(response["Cache-Control"].startswith("max-age=0"))
+        self.assertContains(response, 'const CACHE_NAME = "tree-garden-v2"')
+
+    def test_offline_page_cache_opt_in_is_limited_to_anonymous_requests(self):
+        anonymous = self.client.get(reverse("tree_list"))
+        user = self.make_user("signed-in-gardener")
+        self.client.force_login(user)
+        authenticated = self.client.get(reverse("tree_list"))
+
+        self.assertEqual(anonymous["X-Public-Offline-Cacheable"], "true")
+        self.assertNotIn("X-Public-Offline-Cacheable", authenticated)
+
+
+class EngagementEngineTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="engagement-user", password="test-password"
+        )
+
+    def make_achievement(self, slug, metric):
+        return Achievement.objects.create(
+            slug=slug,
+            name=slug.replace("-", " ").title(),
+            description="Test achievement",
+            criteria={"metric": metric, "threshold": 1},
+            points=1,
+        )
+
+    def test_streak_advances_and_uses_one_monthly_freeze(self):
+        first_day = date(2025, 1, 31)
+        second_day = date(2025, 2, 2)
+
+        record_activity(self.user, "post", day=first_day)
+        streak = record_activity(self.user, "post", day=second_day)
+
+        self.assertEqual(streak.current_post, 2)
+        self.assertEqual(streak.longest_post, 2)
+        self.assertEqual(streak.freeze_available, 0)
+        self.assertEqual(streak.freeze_month, date(2025, 2, 1))
+
+        repeated = record_activity(self.user, "post", day=second_day)
+        self.assertEqual(repeated.current_post, 2)
+
+    def test_login_signal_records_daily_login_streak(self):
+        self.assertTrue(self.client.login(username="engagement-user", password="test-password"))
+
+        streak = UserStreak.objects.get(user=self.user)
+        self.assertEqual(streak.current_login, 1)
+        self.assertEqual(streak.last_login_date, timezone.localdate())
+
+    def test_owner_achievements_update_after_comments_reactions_and_planted_pledges(self):
+        owner = self.user
+        actor = User.objects.create_user(
+            username="engagement-actor", password="test-password"
+        )
+        tree = Tree.objects.create(
+            user=owner,
+            name="Oak",
+            species="Oak",
+            date_planted=date(2025, 1, 1),
+        )
+        comment_badge = self.make_achievement("test-comments", "post_comments")
+        reaction_badge = self.make_achievement(
+            "test-reactions", "max_post_reactions"
+        )
+        pledge_badge = self.make_achievement("test-pledges", "post_pledges")
+        self.client.force_login(actor)
+
+        self.client.post(
+            reverse("react_or_comment"),
+            {
+                "form_type": "comment",
+                "tree_id": tree.pk,
+                "comment_text": "Growing well!",
+            },
+        )
+        self.assertIsNotNone(
+            UserAchievement.objects.get(
+                user=owner, achievement=comment_badge
+            ).unlocked_at
+        )
+
+        self.client.post(
+            reverse("react_or_comment"),
+            {
+                "form_type": "react",
+                "tree_id": tree.pk,
+                "reaction_type": "care",
+                "intensity": "1",
+            },
+        )
+        self.assertIsNotNone(
+            UserAchievement.objects.get(
+                user=owner, achievement=reaction_badge
+            ).unlocked_at
+        )
+
+        pledge = Pledge.objects.create(
+            user=actor, source_post=tree, species="Oak"
+        )
+        self.client.post(
+            reverse("update_pledge_status", args=[pledge.pk]),
+            {"status": "planted"},
+        )
+        self.assertIsNotNone(
+            UserAchievement.objects.get(
+                user=owner, achievement=pledge_badge
+            ).unlocked_at
+        )
+
+    def test_weekly_challenge_does_not_count_toward_daily_challenge_badge(self):
+        badge = self.make_achievement("test-daily-challenges", "challenges")
+        weekly = DailyChallenge.objects.create(
+            date=date(2025, 1, 6),
+            title="Weekly",
+            description="A weekly challenge",
+            challenge_type="weekly",
+        )
+        ChallengeParticipation.objects.create(challenge=weekly, user=self.user)
+
+        update_achievement_progress(self.user)
+        record = UserAchievement.objects.get(user=self.user, achievement=badge)
+        self.assertEqual(record.progress, 0)
+        self.assertIsNone(record.unlocked_at)
+
+    def test_scheduled_posts_publish_and_start_post_streak(self):
+        publish_at = timezone.now() - timedelta(minutes=1)
+        tree = Tree.objects.create(
+            user=self.user,
+            name="Scheduled tree",
+            date_planted=date(2025, 1, 1),
+            publication_status="scheduled",
+            scheduled_publish_at=publish_at,
+        )
+
+        self.assertEqual(publish_scheduled_posts(), 1)
+
+        tree.refresh_from_db()
+        self.assertEqual(tree.publication_status, "published")
+        self.assertIsNotNone(tree.published_at)
+        self.assertEqual(UserStreak.objects.get(user=self.user).current_post, 1)
+
+    def test_draft_is_visible_only_on_its_owner_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("add_tree"),
+            {
+                "name": "Private sapling",
+                "species": "Oak",
+                "date_planted": "2025-01-01",
+                "caption": "Still growing",
+                "save_as_draft": "on",
+            },
+        )
+        tree = Tree.objects.get(name="Private sapling")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(tree.publication_status, "draft")
+        owner_profile = self.client.get(
+            reverse("user_profile", args=[self.user.username])
+        )
+        self.assertIn(tree, owner_profile.context["posts"])
+        self.assertContains(owner_profile, "Draft")
+        self.assertEqual(self.client.get(reverse("tree_detail", args=[tree.pk])).status_code, 200)
+
+        self.client.logout()
+        public_profile = self.client.get(
+            reverse("user_profile", args=[self.user.username])
+        )
+        self.assertNotIn(tree, public_profile.context["posts"])
+        other_user = User.objects.create_user(
+            username="other-profile-viewer", password="test-password"
+        )
+        self.client.force_login(other_user)
+        self.assertEqual(
+            self.client.get(reverse("tree_detail", args=[tree.pk])).status_code, 404
+        )
+
+    def test_post_media_and_hashtags_are_saved_and_searchable(self):
+        media_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(media_directory.cleanup)
+        with override_settings(MEDIA_ROOT=media_directory.name):
+            self.client.force_login(self.user)
+            response = self.client.post(
+                reverse("add_tree"),
+                {
+                    "name": "Community oak",
+                    "species": "Oak",
+                    "date_planted": "2025-01-01",
+                    "caption": "Growing together #NativeTrees",
+                    "extra_images": [
+                        SimpleUploadedFile(
+                            "leaf.jpg", b"image-data", content_type="image/jpeg"
+                        )
+                    ],
+                },
+            )
+            tree = Tree.objects.get(name="Community oak")
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(
+                TreeMedia.objects.filter(tree=tree, media_type="image").count(), 1
+            )
+            self.assertTrue(
+                TreeHashtag.objects.filter(tree=tree, tag="nativetrees").exists()
+            )
+
+        self.client.logout()
+        search_response = self.client.get(reverse("search"), {"q": "#NativeTrees"})
+        self.assertEqual(search_response.status_code, 200)
+        self.assertContains(search_response, "Oak")
+
+    @override_settings(CRON_SECRET="cron-test-secret")
+    def test_daily_engagement_cron_requires_bearer_secret(self):
+        url = reverse("daily_engagement_cron")
+        unauthorized = self.client.get(url)
+        self.assertEqual(unauthorized.status_code, 401)
+
+        with patch(
+            "trees.daily_jobs.run_daily_engagement",
+            return_value={"published_posts": 0, "challenge_id": 1, "reminders": 0},
+        ) as run_job:
+            authorized = self.client.get(
+                url, HTTP_AUTHORIZATION="Bearer cron-test-secret"
+            )
+
+        self.assertEqual(authorized.status_code, 200)
+        self.assertTrue(authorized.json()["success"])
+        run_job.assert_called_once_with()

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Grove marketplace{% endblock %}
+{% block content %}
+<main class="grove-shell">
+  <header class="grove-page-heading"><div><p class="eyebrow">Grove · business network</p><h1>Marketplace</h1><p>Discover growing businesses, supplies, products, and services.</p></div><a class="primary-action" href="{% url 'grove_market:create_listing' %}">Create a listing</a></header>
+  <form method="get" class="market-filter"><label>Listing type<select name="type"><option value="">All listings</option><option value="sell" {% if listing_type == "sell" %}selected{% endif %}>Sell products</option><option value="buy" {% if listing_type == "buy" %}selected{% endif %}>Buy supplies</option><option value="hire" {% if listing_type == "hire" %}selected{% endif %}>Hire services</option></select></label><label>Region<input name="region" value="{{ region }}" placeholder="Search by region"></label><button class="secondary-action" type="submit">Filter listings</button></form>
+  <div class="market-grid">{% for item in listings %}<article class="market-card"><span class="market-tag">{{ item.get_listing_type_display }}</span><p class="eyebrow">{{ item.category }} · {{ item.region|default:item.org.region }}</p><h2>{{ item.title }}</h2><p>{{ item.description }}</p><footer><a href="{% url 'grove:public_farm' item.org.slug %}">{{ item.org.name }}</a>{% if item.price_amount %}<strong>{{ item.currency }} {{ item.price_amount|floatformat:2 }}</strong>{% endif %}{% if item.contact_email %}<a href="mailto:{{ item.contact_email }}">Contact</a>{% endif %}</footer></article>{% empty %}<section class="grove-empty"><h2>Early days, plenty of room to grow</h2><p>No active listings match this filter. Create the first one for your organization.</p></section>{% endfor %}</div>
+  <p class="grove-disclaimer">Marketplace listings are introductions only. Grove does not process payments, verify counterparties, or guarantee product or service quality.</p>
+</main>
+{% endblock %}

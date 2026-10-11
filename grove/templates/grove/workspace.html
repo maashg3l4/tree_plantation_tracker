@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Grove workspace{% endblock %}
+{% block content %}
+<main class="grove-shell">
+  <header class="grove-page-heading">
+    <div><p class="eyebrow">Grove · farm operations</p><h1>Your workspaces</h1><p>Manage land, planting records, and field teams in one place.</p></div>
+    <a class="primary-action" href="{% url 'grove:create_organization' %}">Create a farm workspace</a>
+  </header>
+  {% if memberships %}
+    <div class="grove-org-grid">
+      {% for membership in memberships %}
+        <a class="grove-org-card" href="{% url 'grove:dashboard' membership.org.slug %}">
+          <span class="grove-org-mark" aria-hidden="true">G</span>
+          <span><strong>{{ membership.org.name }}</strong><small>{{ membership.org.get_org_type_display }} · {{ membership.get_role_display }}</small></span>
+          <span class="grove-arrow" aria-hidden="true">↗</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <section class="grove-empty">
+      <span class="grove-org-mark" aria-hidden="true">G</span>
+      <h2>Bring your farm into Grove</h2>
+      <p>Start with your organization. Add mapped plots, tree batches, and your team as you go.</p>
+      <a class="primary-action" href="{% url 'grove:create_organization' %}">Set up a workspace</a>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

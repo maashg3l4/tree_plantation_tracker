@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Community leaderboard{% endblock %}
+{% block content %}
+<main class="phase4-page">
+  <header class="phase4-heading"><p class="eyebrow">Growing together</p><h1>Community leaderboard</h1><p>Impact reactions and unlocked achievement points both count.</p></header>
+  <section class="leaderboard-list">{% for row in leaders %}<a class="leaderboard-row" href="{% url 'user_profile' row.username %}"><span class="leaderboard-rank">{{ forloop.counter }}</span>{% if row.profile.profile_picture %}<img src="{{ row.profile.profile_picture.url }}" alt="">{% else %}<span class="leaderboard-avatar">{{ row.username|first|upper }}</span>{% endif %}<span class="leaderboard-person"><strong>{{ row.get_full_name|default:row.username }}</strong><small>@{{ row.username }}</small></span><span class="leaderboard-score"><strong>{{ row.combined_score }}</strong><small>{{ row.achievement_points }} badge points</small></span></a>{% empty %}<p class="phase4-empty">The leaderboard will grow with the community.</p>{% endfor %}</section>
+</main>
+{% endblock %}

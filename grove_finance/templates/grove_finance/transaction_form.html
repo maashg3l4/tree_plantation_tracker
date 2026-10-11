@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Add transaction · Grove{% endblock %}
+{% block content %}
+<main class="grove-shell grove-form-shell"><p class="eyebrow"><a href="{% url 'grove_finance:overview' org.slug %}">{{ org.name }}</a> · ledger</p><h1>Add a transaction</h1>
+  <form method="post" enctype="multipart/form-data" class="grove-form">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<label class="grove-field"><span>{{ field.label }}</span>{{ field }}{{ field.errors }}</label>{% endfor %}<button class="primary-action" type="submit">Save transaction</button></form>
+</main>
+{% endblock %}

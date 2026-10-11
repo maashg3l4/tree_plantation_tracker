@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Map a plot · {{ org.name }}{% endblock %}
+{% block content %}
+<main class="grove-shell grove-form-shell">
+  <p class="eyebrow"><a href="{% url 'grove:dashboard' org.slug %}">{{ org.name }}</a> · land</p><h1>Add a plot</h1>
+  <p class="grove-muted">Draw the plot boundary. Switch between street and satellite imagery to orient yourself.</p>
+  <form method="post" class="grove-form" id="plot-form">
+    {% csrf_token %}{{ form.non_field_errors }}
+    {% for field in form %}{% if field.name != "boundary" %}<label class="grove-field"><span>{{ field.label }}</span>{{ field }}{{ field.errors }}</label>{% endif %}{% endfor %}
+    {{ form.boundary }}{{ form.boundary.errors }}
+    <div id="plot-map" class="grove-map" aria-label="Map to draw plot boundary"></div>
+    <p id="map-boundary-error" class="grove-disclaimer" role="alert" hidden>Draw a closed plot boundary before saving.</p>
+    <p class="grove-map-help">Draw a polygon and close it by clicking the first point. Map tiles are provided by OpenStreetMap and Esri.</p>
+    <button class="primary-action" type="submit">Save mapped plot</button>
+  </form>
+</main>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js" defer></script>
+<script src="{% static 'grove/plot-map.js' %}" defer></script>
+{% endblock %}

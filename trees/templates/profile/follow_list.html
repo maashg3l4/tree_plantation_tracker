@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ relation|title }} · @{{ profile_user.username }}{% endblock %}
+{% block content %}
+<main class="follow-list-page"><p class="eyebrow"><a href="{% url 'user_profile' profile_user.username %}">@{{ profile_user.username }}</a> · community</p><h1>{{ relation|title }}</h1>
+  <div class="follow-people">{% for person in people %}<a class="follow-person" href="{% url 'user_profile' person.username %}">{% if person.profile.profile_picture %}<img src="{{ person.profile.profile_picture.url }}" alt="">{% else %}<span>{{ person.first_name|first|default:person.username|first|upper }}</span>{% endif %}<div><strong>{{ person.get_full_name|default:person.username }}</strong><small>@{{ person.username }}{% if person.profile.location %} · {{ person.profile.location }}{% endif %}</small></div><b aria-hidden="true">→</b></a>{% empty %}<div class="profile-empty"><h2>Every garden starts with a seed</h2><p>No {{ relation }} to show here yet.</p><a class="secondary-action" href="{% url 'discover' %}">Discover gardeners</a></div>{% endfor %}</div>
+</main>
+{% endblock %}

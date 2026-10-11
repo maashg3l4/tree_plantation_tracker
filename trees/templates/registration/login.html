@@ -1,13 +1,13 @@
-{% extends 'base.html' %}
-{% block title %}Login{% endblock %}
-{% block content %}
-<h2 class="mb-4">Login</h2>
-<div class="card p-4 shadow-sm">
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Login</button>
-  </form>
-</div>
-<a href="/register/" class="btn btn-link mt-3">Don't have an account? Register</a>
+{% extends "registration/auth_base.html" %}
+{% block title %}Log in{% endblock %}
+{% block auth_content %}
+<p class="eyebrow">Welcome back</p><h1>Good to see you again.</h1><p class="auth-copy">Pick up where your garden left off.</p>
+{% if locked_out %}<div class="auth-errors" role="alert">Too many sign-in attempts. Please wait 15 minutes before trying again.</div>{% endif %}
+<form method="post" class="auth-form">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<div class="auth-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+  {% for field in form %}{% if field.name == "remember_me" %}<label class="auth-remember">{{ field }}<span>{{ field.label }}</span></label>{% else %}<label class="auth-field"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<span class="field-error">{{ field.errors|join:", " }}</span>{% endif %}</label>{% endif %}{% endfor %}
+  <a class="auth-inline-link" href="{% url 'password_reset' %}">Forgot password?</a>
+  <button class="auth-submit" type="submit" {% if locked_out %}disabled{% endif %}>Log in <span aria-hidden="true">→</span></button>
+</form>
+<p class="auth-switch">New to the garden? <a href="{% url 'signup_step1' %}">Create an account</a></p>
 {% endblock %}
