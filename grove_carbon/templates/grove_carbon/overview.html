@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Carbon estimate · {{ org.name }}{% endblock %}
+{% block content %}
+<main class="grove-shell">
+  <p class="eyebrow"><a href="{% url 'grove:dashboard' org.slug %}">{{ org.name }}</a> · carbon</p>
+  <header class="grove-page-heading"><div><h1>Carbon screening estimate</h1><p>A transparent starting point for organizing your tree inventory.</p></div></header>
+  <div class="grove-content-grid">
+    <section class="grove-panel"><p class="eyebrow">Estimate a plot</p><h2>Project a simple baseline</h2><p>Grove uses a generic 22 kg CO₂ per tree-year screening proxy. The estimate multiplies recorded batch quantity by the selected horizon.</p><form method="post" class="grove-form">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<label class="grove-field"><span>{{ field.label }}</span>{{ field }}{{ field.errors }}</label>{% endfor %}<button class="primary-action" type="submit">Calculate estimate</button></form></section>
+    <section class="grove-panel"><p class="eyebrow">Important</p><h2>Not a credit claim</h2><p class="grove-disclaimer">This rough screening proxy is not a measured carbon inventory, registry methodology, legal opinion, or guarantee of carbon-credit eligibility. It does not account for species, survival, site conditions, leakage, permanence, or additionality. Consult a qualified local verifier before making claims or transactions.</p><a class="secondary-action" href="{% url 'grove_market:listings' %}?type=sell">Browse marketplace scaffolding</a></section>
+  </div>
+  <section class="grove-panel grove-panel-spaced"><header><div><p class="eyebrow">History</p><h2>Saved estimates</h2></div></header>{% for item in calculations %}<div class="grove-list-row"><span class="grove-plot-icon" aria-hidden="true">CO₂</span><span><strong>{{ item.plot.name }} · {{ item.co2_tonnes }} tCO₂e</strong><small>{{ item.calculated_at|date:"M j, Y" }} · {{ item.methodology }}</small></span><span>Screening only</span></div>{% empty %}<p class="grove-empty-inline">Estimates will appear here after you run one.</p>{% endfor %}</section>
+</main>
+{% endblock %}

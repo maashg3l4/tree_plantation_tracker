@@ -1,0 +1,21 @@
+{
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ],
+  "buildCommand": "python manage.py collectstatic --noinput",
+  "crons": [
+    {
+      "path": "/api/cron/daily-engagement/",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Tree Plantation Social Tracker
 
-A Django-based social platform for tracking tree plantation activities, inspired by Facebook's social feed. Users can register, log in, share trees, react, comment, and manage their profiles in a modern, interactive feed.
+A Django platform for tree-planting communities and commercial farms. The home page introduces both audiences; community posts live at `/community/`, while Grove provides organization workspaces.
 
 ## Features
 
@@ -9,7 +9,7 @@ A Django-based social platform for tracking tree plantation activities, inspired
   - Edit profile (username, email, password, profile picture)
 
 - **Social Feed**
-  - Public home page shows all tree posts from all users
+  - Public community feed shows all tree posts from all users
   - Each post displays:
     - User avatar and name
     - Tree name, species, image, location, status, and last update
@@ -18,13 +18,27 @@ A Django-based social platform for tracking tree plantation activities, inspired
     - "Details" button to view full post
     - Delete button (only for the post owner)
 
+- **Impact Reactions**
+  - Five intent-based reactions with three commitment levels and optional notes
+  - Planting pledges, practical help offers, notifications, and weighted impact scores
+  - Context-aware reaction ordering and a latest-reactions timeline
 - **Social Interactions**
-  - React to any post directly from the feed (AJAX, no page reload)
-  - Comment on any post directly from the feed (AJAX)
+  - React without reloading the feed and add comments with HTMX
   - Only logged-in users can react, comment, or add trees
+- **Community Core**
+  - Email-based signup, onboarding, login with remember-me, and password reset
+  - Public gardener profiles, follow/unfollow, follower lists, discovery, and notifications
+  - Mobile bottom navigation and installable PWA shell with a public-page offline fallback
+  - English/Bengali language middleware and Bengali font support
+- **Engagement tools**
+  - Achievement badges, post/login/reaction streaks, a monthly streak freeze, and leaderboards
+  - Daily and weekly garden challenges, scheduled posts, and in-app streak/comeback reminders
+  - Multi-image and short-video tree posts, drafts, hashtags, search, species/location discovery, and garden insights
 
 - **Tree Management**
   - Add new trees with images and structured location
+  - Identify species from an uploaded image with PlantNet and iNaturalist fallback
+  - Request a cached, image-based AI health analysis with confidence and care recommendations
   - Edit or delete your own tree posts
   - View detailed information for each tree
 
@@ -32,11 +46,23 @@ A Django-based social platform for tracking tree plantation activities, inspired
   - Upload/change profile picture (avatar)
   - Edit username and email
   - Change password with confirmation
+  - Personal or Business/Farm account type
+
+- **Grove farm workspace**
+  - Organization workspaces with owner, manager, worker, and viewer roles
+  - Map-drawn plots with street and satellite basemaps
+  - CSV tree-batch registration and public QR-linked batch records
+  - Plot tasks, worker assignments, optional completion photos, and plot health records
+  - Plot-level Gemini image health analysis when configured
+  - BDT financial ledger with PDF export
+  - Certification document vault with member-checked downloads
+  - Carbon screening estimates and a sell/buy/hire marketplace scaffold
+  - Public farm profiles and a dual-audience animated landing page
 
 - **Modern UI/UX**
-  - Responsive, card-based feed (Bootstrap)
+  - Responsive, card-based feed with Tailwind CSS, Alpine.js, and HTMX
+  - Light/dark themes follow system preference and can be overridden manually
   - User avatars (uploaded or auto-generated)
-  - Login/Register buttons always visible in navbar
   - All posts visible to everyone; social actions require login
 
 ## Getting Started
@@ -44,7 +70,9 @@ A Django-based social platform for tracking tree plantation activities, inspired
 1. **Clone the repository**
 2. **Install dependencies** (in your virtual environment):
    ```bash
-   pip install -r requirements.txt
+   python -m pip install -r requirements.txt
+   npm install
+   npm run build:css
    ```
 3. **Apply migrations:**
    ```bash
@@ -56,9 +84,143 @@ A Django-based social platform for tracking tree plantation activities, inspired
    ```
 5. **Visit** [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
 
+To run the PostgreSQL-backed container stack, copy `.env.example` to `.env`,
+replace both placeholder secrets, and run `docker compose up --build`. The web
+container applies migrations before serving the application. Local development
+continues to use SQLite unless `DB_NAME` is configured.
+
+Species identification uses `PLANTNET_API_KEY` when configured, then falls back
+to iNaturalist. Health analysis uses Gemini Vision and requires `GEMINI_API_KEY`.
+Both features return explicit errors when their providers are unavailable, and
+health results are cached by the tree image. AI health scores are informational,
+not a substitute for professional tree-care advice.
+
+The community signup, profile, follow, notification, and PWA flows are available
+alongside the existing legacy registration route. Password reset email uses
+Django's configured email backend; configure a real backend before production.
+The service worker only stores explicitly marked anonymous community/profile
+pages and static assets; signed-in pages are not placed in its offline cache.
+Google OAuth, bot protection, web-push delivery, translated message catalogs,
+and physical iOS/Android device testing are not configured yet.
+
+## Vercel deployment
+
+The Vercel Python function is stateless, so production needs durable database
+and media storage services. To start without a monthly subscription, use
+providers' free tiers (for example, Neon PostgreSQL and Cloudflare R2) together
+with Vercel Hobby. Free quotas and eligibility can change; check each provider's
+current limits and billing settings first. This is not a guaranteed zero-cost
+service: exceeding a storage, request, or bandwidth allowance may incur charges
+depending on the provider and account settings. Do not add a payment method or
+upgrade a plan if you do not accept that risk.
+
+1. Create a **new, empty** PostgreSQL database and a private S3-compatible
+   object-storage bucket. Do not use the local `db.sqlite3` as production data;
+   local accounts, posts, and uploads are not automatically published.
+2. Import this GitHub repository into Vercel and set its Production Branch to
+   `maashg3l4-impact-reaction-phase-1`. Keep Preview deployments disabled until
+   a separate preview database and storage bucket are configured.
+3. Add production-only environment variables in Vercel Project Settings. Never
+   commit them, paste them into chat, or use the example values as credentials:
+
+   | Variable | Value |
+   | --- | --- |
+   | `DJANGO_DEBUG` | `false` |
+   | `DJANGO_SECRET_KEY` | New, randomly generated secret |
+   | `DATABASE_URL` | PostgreSQL connection URL with TLS enabled |
+   | `AWS_STORAGE_BUCKET_NAME` | Private media bucket name |
+   | `AWS_ACCESS_KEY_ID` | Bucket access key |
+   | `AWS_SECRET_ACCESS_KEY` | Bucket secret key |
+   | `AWS_S3_ENDPOINT_URL` | Provider's S3-compatible endpoint |
+   | `AWS_S3_REGION_NAME` | Provider's region; `auto` for Cloudflare R2 |
+   | `CRON_SECRET` | Separate, randomly generated secret |
+
+   `GEMINI_API_KEY` and `PLANTNET_API_KEY` are optional. Add
+   `CSRF_TRUSTED_ORIGINS` with your exact `https://` site origin if you add a
+   custom domain. Do not enable a paid provider feature solely to follow this
+   guide.
+4. Connect the project with Vercel CLI from a trusted computer (`npm install
+   --global vercel`, `vercel login`, then `vercel link`). Apply the schema to
+   the new production database before inviting users:
+
+   ```powershell
+   vercel env run --environment=production -- py -3.13 manage.py migrate --noinput
+   ```
+
+   Create a production superuser against that same database using the same
+   environment command with `createsuperuser`; choose a unique password and
+   keep it private. Do not reuse the local development credentials.
+5. Deploy the connected branch from Vercel. The configured build collects
+   static assets; Vercel's Python function serves Django. The daily cron runs
+   at 00:00 UTC (06:00 Bangladesh time) and requires the configured
+   `CRON_SECRET`. Check the Vercel deployment/build logs, `/api/status/`, admin
+   login, media uploads, and cron logs before sharing the URL with friends.
+
+Free services may pause inactive projects, impose small resource limits, or
+change their plans. This setup is for a small demo, not a production guarantee.
+The newsletter currently stores addresses but does not send emails. Configure
+and publish real privacy/terms pages and a transactional email service before
+collecting addresses from the public.
+
+The Vercel setup does not configure transactional email or external data
+imports. Verify database backups, bucket access policies, provider credentials,
+and the cron response in Vercel logs before inviting users.
+
+Grove map boundaries use Leaflet, OpenStreetMap, and Esri World Imagery tiles.
+Map tile providers are external services and their availability and terms apply.
+Plot NDVI observations are recorded manually; the app does not currently fetch
+satellite NDVI data. The carbon calculator is a clearly labeled screening proxy,
+not a registry methodology or credit-eligibility decision. Marketplace listings
+do not process payments or verify counterparties. Public farm and batch counts
+are organization-submitted records, not independent verification.
+
+Start a business workspace at `/grove/`. CSV batch imports accept `species`,
+`quantity`, and `planted_date` columns, with optional `spacing_m` and
+`source_nursery`. Owners/managers can add existing user accounts to their team;
+email invitations are not configured. This is an assumption-led Bangladesh MVP;
+validate workflows with local farm partners before production rollout.
+
+## Moderation operations
+
+The purpose-built moderator console lives at `/ops/`; Django Admin remains at
+`/admin/` for deeper data operations. Run `python manage.py migrate` to install
+the Ops schema and create the `Ops Admin`, `Moderator`, `Support`, and `Analyst`
+groups. Assign accounts to these groups from Django Admin. Superusers and
+`Ops Admin` can read and moderate; `Moderator` can review reports and AI flags;
+`Support` and `Analyst` are read-only. Ordinary accounts cannot access the
+console.
+
+Members can report public posts, comments, and profiles. Moderators can dismiss
+reports, warn an account via an in-app notification, or hide/remove a post or
+comment. Every decision requires a reason and stores a before/after snapshot in
+the read-only audit interface. Hidden and removed content is excluded from
+public feeds and search; owners can still view their hidden posts. AI flags are
+reviewable records, but automated content detection and Perspective API
+integration are not enabled in this MVP.
+
+## Footer and newsletter
+
+The shared Canopy footer includes responsive navigation, the browser-native
+PWA install prompt where supported, language selection, and a database-backed
+newsletter opt-in list. Newsletter emails are not sent yet; configure a
+transactional email provider before offering newsletter delivery. Subscribers
+can unsubscribe from the confirmation link shown after signup. Django Admin
+lists subscriber addresses and subscription status.
+
+Optional footer destinations are configured with `CANOPY_SUPPORT_EMAIL`,
+`CANOPY_FACEBOOK_URL`, `CANOPY_INSTAGRAM_URL`, `CANOPY_X_URL`,
+`CANOPY_YOUTUBE_URL`, `CANOPY_LINKEDIN_URL`, `CANOPY_GOOGLE_PLAY_URL`,
+`CANOPY_PRIVACY_URL`, `CANOPY_TERMS_URL`, `CANOPY_COOKIE_POLICY_URL`,
+`CANOPY_ACCESSIBILITY_URL`, and `CANOPY_GUIDELINES_URL`. Social, store, legal,
+and guidelines links are omitted until a valid HTTPS destination is configured.
+The system-status indicator currently checks database connectivity only.
+
 ## Folder Structure
 - `tracker/` - Django project settings
-- `trees/` - Main app (models, views, templates, forms)
+- `trees/` - Community app (models, views, templates, forms)
+- `grove/` - Farm workspace, plots, batches, tasks, memberships, and health analyses
+- `grove_market/`, `grove_finance/`, `grove_carbon/`, `grove_compliance/` - Modular business features
+- `ops/` - Role-restricted moderation console, reports, AI flag queue, and audit log
 - `media/` - Uploaded images (tree and profile pictures)
 - `templates/` - HTML templates (feed, auth, profile, etc.)
 

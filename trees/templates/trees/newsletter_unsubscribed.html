@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Unsubscribed from Canopy updates" %}{% endblock %}
+{% block content %}
+<main class="footer-confirmation">
+    <p class="eyebrow">{% trans "Newsletter preferences" %}</p>
+    <h1>{% trans "You’re unsubscribed." %}</h1>
+    <p>{% trans "You won’t receive future Canopy newsletter updates at this address." %}</p>
+    <a class="primary-action" href="{% url 'tree_list' %}">{% trans "Back to the community" %}</a>
+</main>
+{% endblock %}

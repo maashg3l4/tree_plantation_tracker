@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Farm finances · {{ org.name }}{% endblock %}
+{% block content %}
+<main class="grove-shell">
+  <p class="eyebrow"><a href="{% url 'grove:dashboard' org.slug %}">{{ org.name }}</a> · finances</p>
+  <header class="grove-page-heading"><div><h1>Financial records</h1><p>Track farm costs and revenue in BDT.</p></div><div class="grove-heading-actions"><a class="secondary-action" href="{% url 'grove_finance:pdf_report' org.slug %}">Download PDF report</a>{% if membership.role == "owner" or membership.role == "manager" %}<a class="primary-action" href="{% url 'grove_finance:create_transaction' org.slug %}">+ Add transaction</a>{% endif %}</div></header>
+  <section class="grove-stat-grid"><article><span>Revenue</span><strong>৳{{ totals.revenue|floatformat:2 }}</strong><small>Recorded income</small></article><article><span>Expenses</span><strong>৳{{ totals.expenses|floatformat:2 }}</strong><small>Recorded costs</small></article><article><span>Net recorded</span><strong>৳{{ totals.net|floatformat:2 }}</strong><small>Revenue less expenses</small></article></section>
+  <section class="grove-panel"><header><div><p class="eyebrow">Ledger</p><h2>Recent transactions</h2></div></header><div class="grove-table-wrap"><table class="grove-table"><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Plot</th><th>Description</th><th>Amount</th></tr></thead><tbody>{% for item in transactions %}<tr><td>{{ item.date }}</td><td><span class="ledger-type ledger-type--{{ item.trans_type }}">{{ item.get_trans_type_display }}</span></td><td>{{ item.category }}</td><td>{{ item.plot.name|default:"—" }}</td><td>{{ item.description }}</td><td>{{ item.currency }} {{ item.amount|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="6">No transactions recorded yet.</td></tr>{% endfor %}</tbody></table></div></section>
+  <p class="grove-disclaimer">Reports summarize information entered by your organization and are not audited accounts.</p>
+</main>
+{% endblock %}

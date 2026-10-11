@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Search the garden community{% endblock %}
+{% block content %}
+<main class="phase4-page">
+  <header class="phase4-heading"><p class="eyebrow">Find your next idea</p><h1>Search the garden</h1><p>Look up gardeners, trees, places, and hashtags.</p></header>
+  <form class="phase4-search" method="get" action="{% url 'search' %}">
+    <label class="sr-only" for="garden-search">Search people, species, posts, and hashtags</label>
+    <input id="garden-search" type="search" name="q" value="{{ query }}" placeholder="Try “mango”, “Dhaka”, or #GardenCare" maxlength="100">
+    <button class="auth-submit" type="submit">Search</button>
+  </form>
+  {% if query %}
+  <section class="phase4-section"><h2>Gardeners</h2><div class="phase4-people">{% for person in people %}<a class="phase4-person" href="{% url 'user_profile' person.username %}"><span>{{ person.first_name|first|default:person.username|first|upper }}</span><strong>{{ person.get_full_name|default:person.username }}</strong><small>@{{ person.username }}</small></a>{% empty %}<p class="phase4-muted">No matching gardeners.</p>{% endfor %}</div></section>
+  <section class="phase4-section"><h2>Garden stories</h2><div class="profile-post-grid">{% for tree in trees %}<a href="{% url 'tree_detail' tree.pk %}" class="profile-post-tile">{% if tree.image %}<img src="{{ tree.image.url }}" loading="lazy" alt="{{ tree.name }}">{% else %}<span class="profile-post-placeholder">🌱</span>{% endif %}<span><strong>{{ tree.species|default:tree.name }}</strong><small>by @{{ tree.user.username }}</small></span></a>{% empty %}<p class="phase4-muted">No matching tree posts. Try a species, location, or #hashtag.</p>{% endfor %}</div></section>
+  {% else %}<section class="phase4-empty"><span>⌕</span><h2>What are you curious about?</h2><p>Search plant names, places, gardeners, and community hashtags.</p></section>{% endif %}
+</main>
+{% endblock %}

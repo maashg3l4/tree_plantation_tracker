@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Tree batch · {{ batch.plot.org.name }}{% endblock %}
+{% block content %}
+<main class="grove-shell public-batch"><p class="eyebrow">Grove · planting record</p><h1>{{ batch.species }}</h1><p class="grove-muted">A planting batch recorded by <a href="{% url 'grove:public_farm' batch.plot.org.slug %}">{{ batch.plot.org.name }}</a>.</p>
+  <section class="grove-stat-grid"><article><span>Recorded quantity</span><strong>{{ batch.quantity }}</strong><small>Trees in this batch</small></article><article><span>Plot</span><strong>{{ batch.plot.name }}</strong><small>{{ batch.plot.area_hectares }} hectares</small></article><article><span>Planted date</span><strong>{{ batch.planted_date }}</strong><small>As recorded by the organization</small></article></section>
+  <p class="grove-disclaimer">This QR links to a planting record and does not certify tree survival or independently verify the submitted data.</p>
+</main>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ org.name }} · Grove farm profile{% endblock %}
+{% block content %}
+<main class="grove-shell public-farm">
+  <section class="farm-cover">{% if org.cover_image %}<img src="{{ org.cover_image.url }}" alt="">{% endif %}<span class="grove-verified">{% if org.verified %}Verified organization{% else %}Public farm profile{% endif %}</span></section>
+  <header class="farm-profile-heading">{% if org.logo %}<img src="{{ org.logo.url }}" alt="" class="farm-logo">{% else %}<span class="farm-logo farm-logo--fallback">G</span>{% endif %}<div><p class="eyebrow">{{ org.get_org_type_display }} · {{ org.country }}</p><h1>{{ org.name }}</h1><p>{{ org.region }}</p></div><a class="primary-action" href="{% url 'grove:workspace' %}">Run your farm on Grove</a></header>
+  <p class="farm-description">{{ org.description|default:"A growing organization sharing its tree-planting journey." }}</p>
+  <section class="grove-stat-grid"><article><span>Tracked trees</span><strong>{{ tree_count }}</strong><small>From recorded planting batches</small></article><article><span>Plots</span><strong>{{ plots|length }}</strong><small>Shared by this organization</small></article><article><span>Area</span><strong>{{ org.total_area_hectares|default:"—" }}</strong><small>Hectares reported by the organization</small></article></section>
+  <section class="grove-panel"><header><div><p class="eyebrow">The land</p><h2>Public plots</h2></div></header>{% for plot in plots %}<div class="grove-list-row"><span class="grove-plot-icon" aria-hidden="true">⌖</span><span><strong>{{ plot.name }}</strong><small>{{ plot.area_hectares }} ha · {{ plot.tree_total|default:0 }} tracked trees</small></span></div>{% empty %}<p class="grove-empty-inline">This farm has not published any plots yet.</p>{% endfor %}</section>
+  <p class="grove-disclaimer">Public figures are organization-submitted records, not independent verification.</p>
+</main>
+{% endblock %}

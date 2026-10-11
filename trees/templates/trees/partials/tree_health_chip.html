@@ -1,0 +1,69 @@
+{% if tree.image %}
+<section
+    class="health-analysis"
+    x-data="healthAnalysis($el)"
+    data-endpoint="{% url 'analyze_tree' tree.id %}"
+    data-can-analyze="{% if user.is_authenticated and user.id == tree.user_id %}true{% else %}false{% endif %}"
+    {% if tree.latest_health_analysis %}
+        data-score="{{ tree.latest_health_analysis.score }}"
+        data-confidence="{{ tree.latest_health_analysis.confidence }}"
+        data-issues="{{ tree.health_issues_json }}"
+        data-recommendations="{{ tree.health_recommendations_json }}"
+        data-created-at="{{ tree.latest_health_analysis.created_at|date:'c' }}"
+    {% endif %}
+>
+    <button
+        class="health-chip"
+        type="button"
+        :class="score === null ? 'health-chip--empty' : scoreBand"
+        @click="open = true"
+        aria-haspopup="dialog"
+    >
+        {% if tree.latest_health_analysis %}
+            <span x-text="`Health ${score}/100`">Health {{ tree.latest_health_analysis.score }}/100</span>
+        {% else %}
+            <span>Analyze tree health</span>
+        {% endif %}
+    </button>
+    <div class="health-modal-backdrop" x-cloak x-show="open" x-transition.opacity @keydown.escape.window="open = false">
+        <section class="health-modal" role="dialog" aria-modal="true" aria-labelledby="health-title">
+            <button type="button" class="health-modal-close" aria-label="Close health analysis" @click="open = false">×</button>
+            <p class="eyebrow">AI-assisted tree check</p>
+            <h3 id="health-title">Tree health</h3>
+            <div x-show="score !== null">
+                <p class="health-score" :class="scoreBand"><span x-text="score"></span><small>/100</small></p>
+                <div class="health-confidence">
+                    <div class="health-confidence-label">
+                        <span>AI confidence</span>
+                        <strong x-text="`${Math.round(confidence * 100)}%`"></strong>
+                    </div>
+                    <progress max="100" :value="Math.round(confidence * 100)" aria-label="AI confidence"></progress>
+                </div>
+                <h4>Visible signs</h4>
+                <ul class="health-detail-list">
+                    <template x-for="(issue, index) in issues" :key="`issue-${index}`">
+                        <li x-text="issue"></li>
+                    </template>
+                    <li x-show="issues.length === 0">No visible issues were identified.</li>
+                </ul>
+                <h4>Care recommendations</h4>
+                <ul class="health-detail-list">
+                    <template x-for="(recommendation, index) in recommendations" :key="`recommendation-${index}`">
+                        <li x-text="recommendation"></li>
+                    </template>
+                </ul>
+                <p class="health-analysis-date" x-show="createdAt" x-text="createdAtLabel"></p>
+            </div>
+            <p x-show="score === null && !error">No analysis yet. Analyze this tree image to see visible signs and care suggestions.</p>
+            <p class="health-analysis-error" x-show="error" x-text="error" role="alert"></p>
+            <p class="health-disclaimer">AI analysis is informational and not a substitute for an arborist or other tree-care expert.</p>
+            {% if user.is_authenticated and user.id == tree.user_id %}
+                <button class="health-analyze-button" type="button" @click="analyze()" :disabled="loading">
+                    <span x-show="!loading" x-text="score === null ? 'Analyze image' : 'Re-analyze image'"></span>
+                    <span x-show="loading">Analyzing image…</span>
+                </button>
+            {% endif %}
+        </section>
+    </div>
+</section>
+{% endif %}

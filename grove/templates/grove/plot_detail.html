@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ plot.name }} · Grove{% endblock %}
+{% block content %}
+<main class="grove-shell">
+  <p class="eyebrow"><a href="{% url 'grove:dashboard' org.slug %}">{{ org.name }}</a> · plot</p>
+  <header class="grove-page-heading"><div><h1>{{ plot.name }}</h1><p>{{ plot.area_hectares }} hectares{% if plot.soil_type %} · {{ plot.soil_type }} soil{% endif %}{% if plot.irrigation %} · {{ plot.irrigation }} irrigation{% endif %}</p></div>{% if org.is_public %}<a class="secondary-action" href="{% url 'grove:public_farm' org.slug %}">Public profile ↗</a>{% endif %}</header>
+  <div class="grove-content-grid">
+    <section class="grove-panel">
+      <header><div><p class="eyebrow">Planting records</p><h2>Tree batches</h2></div></header>
+      {% for batch in batches %}
+        <div class="grove-list-row"><span class="grove-plot-icon" aria-hidden="true">♧</span><span><strong>{{ batch.species }} · {{ batch.quantity }}</strong><small>Planted {{ batch.planted_date }}{% if batch.source_nursery %} · {{ batch.source_nursery }}{% endif %}</small></span>{% if org.is_public %}<a href="{% url 'grove:batch_qr' org.slug batch.qr_batch_code %}" title="Show QR code">QR</a>{% else %}<span title="Make the farm profile public to enable QR links">Private</span>{% endif %}</div>
+      {% empty %}<p class="grove-empty-inline">No planting batches recorded yet.</p>{% endfor %}
+      {% if can_manage %}
+      <form class="grove-upload-box" method="post" enctype="multipart/form-data" action="{% url 'grove:import_batches' org.slug plot.pk %}">
+        {% csrf_token %}<strong>Import tree batches from CSV</strong><p>Headers: species, quantity, planted_date, spacing_m, source_nursery. Dates use YYYY-MM-DD.</p>
+        <input type="file" name="csv_file" accept=".csv,text/csv" required><button class="secondary-action" type="submit">Import CSV</button>
+      </form>
+      {% endif %}
+    </section>
+    <section class="grove-panel">
+      <header><div><p class="eyebrow">Monitoring</p><h2>Plot health</h2></div></header>
+      {% if latest_ai_analysis %}<div class="grove-ai-health"><strong>{{ latest_ai_analysis.score }}<small>/100</small></strong><span>AI field-image health score · {{ latest_ai_analysis.created_at|date:"M j, Y" }}<small>Confidence {{ latest_ai_analysis.confidence|floatformat:2 }} (0–1)</small></span></div>{% if latest_ai_analysis.issues %}<h3>Observed concerns</h3><ul>{% for issue in latest_ai_analysis.issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% endif %}{% if latest_ai_analysis.recommendations %}<h3>Suggested checks</h3><ul>{% for recommendation in latest_ai_analysis.recommendations %}<li>{{ recommendation }}</li>{% endfor %}</ul>{% endif %}{% endif %}
+      {% if can_manage %}<form method="post" enctype="multipart/form-data" action="{% url 'grove:analyze_plot_health' org.slug plot.pk %}" class="grove-upload-box">{% csrf_token %}<strong>AI health spot check</strong><p>Analyze one representative field image using the configured Gemini provider. A provider key is required; reusing the same image returns the cached result.</p><input type="file" name="image" accept="image/jpeg,image/png,image/webp" required><button class="secondary-action" type="submit">Analyze field image</button></form>{% endif %}
+      {% if latest_health %}<div class="grove-ndvi"><strong>{{ latest_health.ndvi }}</strong><span>Latest NDVI observation<br><small>{{ latest_health.captured_at|date:"M j, Y" }} · {{ latest_health.get_source_display|default:latest_health.source }}</small></span></div>{% else %}<p class="grove-empty-inline">No NDVI observations have been recorded for this plot.</p>{% endif %}
+      {% if can_manage %}<form method="post" action="{% url 'grove:add_health_snapshot' org.slug plot.pk %}" class="grove-inline-form">{% csrf_token %}<label>NDVI reading <input type="number" name="ndvi" min="-1" max="1" step="0.0001" required></label><label>Source / note <input type="text" name="notes" maxlength="240" placeholder="e.g. satellite source and capture date"></label><button class="secondary-action" type="submit">Record observation</button></form>{% endif %}
+      <p class="grove-disclaimer">Satellite imagery can help orient field checks. NDVI values must come from a configured imagery provider or verified source; this workspace does not calculate satellite NDVI automatically.</p>
+    </section>
+  </div>
+  <section class="grove-panel grove-panel-spaced"><header><div><p class="eyebrow">Field work</p><h2>Plot tasks</h2></div></header>
+    {% for task in tasks %}<div class="grove-task-row"><span class="task-priority task-priority--{{ task.priority }}"></span><span><strong>{{ task.title }}</strong><small>{{ task.get_task_type_display }} · Due {{ task.due_date }}{% if task.assigned_to %} · {{ task.assigned_to.username }}{% endif %}</small></span>{% if task.completed_at %}<span class="grove-done">Completed</span>{% elif membership.role == "owner" or membership.role == "manager" or task.assigned_to_id == user.id %}<form method="post" enctype="multipart/form-data" action="{% url 'grove:complete_task' org.slug task.pk %}">{% csrf_token %}<input type="file" name="proof_image" accept="image/*" aria-label="Optional task completion photo"><button class="text-action" type="submit">Complete</button></form>{% endif %}</div>{% empty %}<p class="grove-empty-inline">No tasks for this plot yet.</p>{% endfor %}
+  </section>
+</main>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Create marketplace listing · Grove{% endblock %}
+{% block content %}
+<main class="grove-shell grove-form-shell"><p class="eyebrow"><a href="{% url 'grove_market:listings' %}">Marketplace</a> · {{ membership.org.name }}</p><h1>Create a listing</h1>
+  <form method="post" class="grove-form">{% csrf_token %}<input type="hidden" name="org" value="{{ membership.org.slug }}">{{ form.non_field_errors }}{% for field in form %}<label class="grove-field"><span>{{ field.label }}</span>{{ field }}{{ field.errors }}</label>{% endfor %}<button class="primary-action" type="submit">Publish listing</button></form>
+</main>
+{% endblock %}

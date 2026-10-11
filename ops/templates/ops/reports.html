@@ -1,0 +1,10 @@
+{% extends "ops/base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<header class="ops-topbar"><div><p class="ops-side-label">Moderation</p><h1 class="ops-title">Community reports</h1><p class="ops-subtitle">Review member reports and record a reason for every decision.</p></div></header>
+<form method="get" class="ops-actions" aria-label="Filter reports"><label class="ops-muted" for="report-status">Show</label><select id="report-status" name="status" class="ops-form-control" style="width:auto">{% for value,label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}<option value="all" {% if selected_status == "all" %}selected{% endif %}>All reports</option></select><button class="ops-button ops-button--muted" type="submit">Filter</button></form>
+<div class="ops-table-wrap" style="margin-top:1rem"><table class="ops-table"><thead><tr><th>Report</th><th>Reason</th><th>Reported by</th><th>Details</th><th>Status</th><th>Received</th></tr></thead><tbody>
+{% for report in page %}<tr><td><a href="{% url 'ops:report_detail' report.pk %}">Review #{{ report.pk }}</a></td><td>{{ report.get_reason_display }}</td><td>{{ report.reporter|default:"Deleted account" }}</td><td>{{ report.details|default:"—"|truncatechars:90 }}</td><td><span class="ops-pill{% if report.status == 'pending' %} ops-pill--warning{% else %} ops-pill--muted{% endif %}">{{ report.get_status_display }}</span></td><td>{{ report.created_at|date:"M j, Y H:i" }}</td></tr>{% empty %}<tr><td colspan="6" class="ops-empty">No reports in this queue. Nice work.</td></tr>{% endfor %}
+</tbody></table></div>
+<nav class="ops-pagination" aria-label="Report pagination"><span>{% if page.has_previous %}<a href="?status={{ selected_status }}&page={{ page.previous_page_number }}">← Previous</a>{% endif %}</span><span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span><span>{% if page.has_next %}<a href="?status={{ selected_status }}&page={{ page.next_page_number }}">Next →</a>{% endif %}</span></nav>
+{% endblock %}

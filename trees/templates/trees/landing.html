@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Grow impact together{% endblock %}
+{% block content %}
+<main class="landing">
+  <section class="landing-hero" id="mission">
+    <div class="landing-copy">
+      <p class="eyebrow">A greener world, grown together</p>
+      <h1>Make every tree<br><span>count for more.</span></h1>
+      <p class="landing-lede">A home for people who plant trees and the farms who grow them at scale. Track real progress, share what works, and grow a healthier future.</p>
+      <div class="landing-actions">
+        <a class="primary-action" href="{% url 'tree_list' %}">Explore the community <span aria-hidden="true">→</span></a>
+        <a class="secondary-action" href="{% url 'grove:workspace' %}">Open Grove for farms</a>
+      </div>
+      <div class="landing-trust">
+        <span><i></i> Built for people and planet</span>
+        <span>Bangladesh first · growing everywhere</span>
+      </div>
+    </div>
+    <div class="globe-stage" aria-label="An animated illustration of a connected green planet">
+      <div class="globe-orbit globe-orbit--one"></div>
+      <div class="globe-orbit globe-orbit--two"></div>
+      <div class="globe">
+        <div class="globe-grid"></div>
+        <svg class="globe-land" viewBox="0 0 520 520" aria-hidden="true">
+          <path d="m105 146 34-39 52-19 39 12 15 34-21 24 16 25-26 22-4 39-31 13-16 39-31-9-12-31-28-15-4-43-23-34 10-32Zm151 125 24-27 39 7 22 26-9 33 22 27-15 48-32 24-12 53-27 6-18-41-33-33 11-47-18-38 20-38Zm87-150 49-19 40 12 22 34-14 34-36 3-18 26-36-10-31-34 3-28Z"/>
+          <circle cx="345" cy="279" r="8"/><circle cx="303" cy="306" r="6"/><circle cx="195" cy="196" r="7"/>
+        </svg>
+        <span class="globe-pulse globe-pulse--a"></span><span class="globe-pulse globe-pulse--b"></span>
+        <span class="globe-pulse globe-pulse--c"></span>
+      </div>
+      <div class="globe-caption"><strong>One living planet</strong><span>Connected by the people caring for it</span></div>
+      <div class="globe-stat"><span>{{ public_farm_count }}</span><small>public farms</small></div>
+    </div>
+    <div class="landing-scroll" aria-hidden="true"><span></span> A better way to grow</div>
+  </section>
+
+  <section class="landing-impact" aria-label="Current community impact">
+    <div><strong>{{ community_tree_count|default:0 }}</strong><span>community tree stories</span></div>
+    <div><strong>{{ grove_tree_count|default:0 }}</strong><span>trees tracked by public farms</span></div>
+    <div><strong>{{ public_farm_count|default:0 }}</strong><span>farms growing in Grove</span></div>
+  </section>
+
+  <section class="landing-dual" id="how-it-works">
+    <article class="audience-card audience-card--people">
+      <span class="audience-kicker">For everyone who cares</span>
+      <h2>Plant something.<br>Pass it on.</h2>
+      <p>Share your trees, discover local planting stories, and turn encouragement into real-world action.</p>
+      <a href="{% url 'tree_list' %}">See the community <span aria-hidden="true">↗</span></a>
+    </article>
+    <article class="audience-card audience-card--business">
+      <span class="audience-kicker">For farms and growing businesses</span>
+      <h2>Your land is living.<br>Manage it that way.</h2>
+      <p>Map plots, register planting batches, coordinate field teams, and keep your operation's records together.</p>
+      <a href="{% url 'grove:workspace' %}">Discover Grove <span aria-hidden="true">↗</span></a>
+    </article>
+  </section>
+</main>
+{% endblock %}

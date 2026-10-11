@@ -1,34 +1,81 @@
+{% load static i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Tree Plantation Tracker{% endblock %}</title>
-    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#14532d">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Canopy">
+    <link rel="manifest" href="{% static 'trees/manifest.webmanifest' %}">
+    <link rel="icon" href="{% static 'trees/icons/garden.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{% static 'trees/icons/garden.svg' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}Canopy{% endblock %}</title>
+    <script>
+        (function () {
+            let preference = null;
+            try { preference = localStorage.getItem('theme'); } catch (error) { console.warn('Theme preference could not be read.', error); }
+            const dark = preference === 'dark' || ((!preference || preference === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.classList.toggle('dark', dark);
+        }());
+    </script>
     <link href="{% static 'trees/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'trees/custom-overrides.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/app.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/navbar.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/footer.css' %}" rel="stylesheet">
+    <script src="{% static 'trees/micro-interactions.js' %}" defer></script>
 </head>
-<body class="bg-light">
+<body>
+<svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-planted" viewBox="0 0 24 24"><path d="M12 20v-8m0 2c-4.5 0-7-2.5-7-7 4.5 0 7 2.5 7 7Zm0-3c0-4.5 2.5-7 7-7 0 4.5-2.5 7-7 7Z"/></symbol>
+    <symbol id="icon-inspiring" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm7 12 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15ZM5 3l.8 1.7L7.5 5.5l-1.7.8L5 8l-.8-1.7-1.7-.8 1.7-.8L5 3Z"/></symbol>
+    <symbol id="icon-care" viewBox="0 0 24 24"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11s-8.8-5.8-8.8-11A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/><path d="M8 12h2l1.2-2.2L13 15l1.2-3H16"/></symbol>
+    <symbol id="icon-help" viewBox="0 0 24 24"><path d="m14.7 6.3 3-3 3 3-3 3m-1-2L8 16l-3-3 8.7-8.7M4 20l4-1-3-3-1 4Zm12-5 4 4"/></symbol>
+    <symbol id="icon-insight" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 3 3 6-7"/><path d="M16 6h4v4"/></symbol>
+</svg>
 
-<nav class="navbar navbar-dark bg-success mb-4">
-    <div class="container d-flex justify-content-between align-items-center">
-        <a class="navbar-brand" href="/">🌳 Tree Plantation Tracker</a>
-        <div>
-            {% if user.is_authenticated %}
-                <span class="text-white me-2">Hi, {{ user.username }}!</span>
-                <a href="/profile/" class="btn btn-outline-light btn-sm me-2">Edit Profile</a>
-                <a href="/logout/" class="btn btn-light btn-sm">Logout</a>
-            {% else %}
-                <a href="/login/" class="btn btn-light btn-sm me-2">Login</a>
-                <a href="/register/" class="btn btn-outline-light btn-sm">Register</a>
-            {% endif %}
+{% include "partials/_navbar_desktop.html" %}
+{% include "partials/_navbar_mobile_top.html" %}
+{% include "partials/_mobile_drawer.html" %}
+
+<div class="page-container">
+    {% if messages %}
+        <div class="site-messages" role="status">
+            {% for message in messages %}<div class="site-message site-message--{{ message.tags }}">{{ message }}</div>{% endfor %}
         </div>
-    </div>
-</nav>
-
-<div class="container">
-    {% block content %}
-    {% endblock %}
+    {% endif %}
+    {% block content %}{% endblock %}
 </div>
-
+{% include "partials/_footer.html" %}
+{% if request.resolver_match.url_name != 'tree_detail' and request.resolver_match.url_name != 'add_tree' %}
+    {% include "partials/_navbar_mobile_bottom.html" %}
+    {% include "partials/_post_sheet.html" %}
+    {% include "partials/_theme_toggle.html" %}
+{% endif %}
+{% include "partials/_search_overlay.html" %}
+<div class="install-app-prompt" id="install-app-prompt" hidden>
+    <span><strong>{% trans "Take your garden with you" %}</strong><small>{% trans "Install the app for a home-screen shortcut." %}</small></span>
+    <button id="install-app-button" type="button">{% trans "Install" %}</button>
+    <button id="dismiss-install-button" type="button" aria-label="{% trans 'Dismiss install prompt' %}">×</button>
+</div>
+<script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+<script src="{% static 'trees/app.js' %}" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+<script src="{% static 'trees/navbar.js' %}" defer></script>
+<script src="{% static 'trees/theme.js' %}" defer></script>
+<script src="{% static 'trees/footer.js' %}" defer></script>
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("{% url 'service_worker' %}").catch((error) => console.warn("Offline support could not be enabled.", error)));
+    }
+</script>
 </body>
 </html>

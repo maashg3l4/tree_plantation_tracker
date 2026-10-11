@@ -1,0 +1,68 @@
+{% load static %}
+<header class="canopy-header">
+    <div class="canopy-header-inner">
+        <a class="canopy-brand" href="{% url 'home' %}" aria-label="Canopy home">
+            <svg class="canopy-brand-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9m0 3C7 15 4 12 4 6c5 0 8 3 8 9Zm0-4c0-5 3-8 8-8 0 5-3 8-8 8Z"/></svg>
+            <span>Canopy</span>
+        </a>
+
+        <nav class="canopy-primary-nav" aria-label="Primary navigation">
+            <a class="canopy-nav-link{% if request.resolver_match.url_name == 'tree_list' or request.resolver_match.url_name == 'home' %} is-active{% endif %}" href="{% url 'tree_list' %}"{% if request.resolver_match.url_name == 'tree_list' or request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>Community</a>
+            <a class="canopy-nav-link{% if request.resolver_match.url_name == 'leaderboard' %} is-active{% endif %}" href="{% url 'leaderboard' %}"{% if request.resolver_match.url_name == 'leaderboard' %} aria-current="page"{% endif %}>Leaderboard</a>
+            <a class="canopy-nav-link{% if request.path|slice:':6' == '/grove' %} is-active{% endif %}" href="{% url 'grove:workspace' %}"{% if request.path|slice:':6' == '/grove' %} aria-current="page"{% endif %}>Grove</a>
+            <div class="canopy-menu">
+                <button class="canopy-nav-link canopy-menu-trigger{% if request.resolver_match.url_name == 'discover' or request.resolver_match.url_name == 'search' or request.resolver_match.url_name == 'daily_challenges' or request.resolver_match.url_name == 'garden_insights' or request.resolver_match.url_name == 'achievements' or request.path|slice:':7' == '/market' %} is-active{% endif %}" type="button" data-menu-trigger="more-menu" aria-expanded="false" aria-controls="more-menu">
+                    More
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="canopy-dropdown canopy-more-menu" id="more-menu" hidden>
+                    <a href="{% url 'discover' %}"{% if request.resolver_match.url_name == 'discover' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4m-7-8 5 2-2 5-3-7Z"/></svg>Discover</a>
+                    <a href="{% url 'search' %}"{% if request.resolver_match.url_name == 'search' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Search</a>
+                    <a href="{% url 'daily_challenges' %}"{% if request.resolver_match.url_name == 'daily_challenges' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8m-4-4v4m-5-17h10v5a5 5 0 0 1-10 0V4Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4"/></svg>Challenges</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'garden_insights' %}"{% if request.resolver_match.url_name == 'garden_insights' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M7 14l4-4 3 3 6-7"/></svg>Insights</a>
+                        <a href="{% url 'achievements' %}"{% if request.resolver_match.url_name == 'achievements' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8m-4-4v4m-5-17h10v5a5 5 0 0 1-10 0V4Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4"/></svg>Badges</a>
+                    {% endif %}
+                    <a href="{% url 'grove_market:listings' %}"{% if request.path|slice:':7' == '/market' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2-5H5L3 9Zm2 0v11h14V9m-9 11v-6h4v6"/></svg>Marketplace</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="canopy-header-actions">
+            <button class="canopy-icon-button canopy-search-trigger" type="button" data-search-open aria-label="Open search" title="Search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                <kbd>⌘K</kbd>
+            </button>
+            {% if user.is_authenticated %}
+                <div class="canopy-menu canopy-avatar-menu">
+                    <button class="canopy-avatar-trigger" type="button" data-menu-trigger="avatar-menu" aria-expanded="false" aria-controls="avatar-menu" aria-label="Open account menu">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="">
+                        {% else %}
+                            <span aria-hidden="true">{{ user.username|first|upper }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="canopy-dropdown canopy-account-menu" id="avatar-menu" hidden>
+                        <div class="canopy-account-heading">
+                            {% if user.profile.profile_picture %}
+                                <img src="{{ user.profile.profile_picture.url }}" alt="">
+                            {% else %}
+                                <span class="canopy-avatar-fallback" aria-hidden="true">{{ user.username|first|upper }}</span>
+                            {% endif %}
+                            <span><strong>{{ user.get_full_name|default:user.username }}</strong><small>@{{ user.username }}</small>{% if user.email %}<small>{{ user.email }}</small>{% endif %}</span>
+                        </div>
+                        <div class="canopy-dropdown-divider"></div>
+                        <a href="{% url 'user_profile' user.username %}">Profile</a>
+                        <a href="{% url 'change_password' %}">Settings</a>
+                        <a href="{% url 'garden_insights' %}">Insights</a>
+                        <div class="canopy-dropdown-divider"></div>
+                        <a class="canopy-logout-link" href="{% url 'logout' %}">Log out</a>
+                    </div>
+                </div>
+            {% else %}
+                <a class="canopy-login-link" href="{% url 'login' %}">Log in</a>
+                <a class="canopy-signup-link" href="{% url 'signup_step1' %}">Sign up</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

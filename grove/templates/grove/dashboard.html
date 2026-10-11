@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ org.name }} · Grove{% endblock %}
+{% block content %}
+<main class="grove-shell">
+  <header class="grove-page-heading">
+    <div><p class="eyebrow">{{ org.get_org_type_display }} · {{ membership.get_role_display }}</p><h1>{{ org.name }}</h1><p>{{ org.region|default:org.country }}{% if org.total_area_hectares %} · {{ org.total_area_hectares }} ha{% endif %}</p></div>
+    <div class="grove-heading-actions">{% if org.is_public %}<a class="secondary-action" href="{% url 'grove:public_farm' org.slug %}" target="_blank" rel="noopener">Public farm page ↗</a>{% else %}<span class="grove-muted">Profile is private</span>{% endif %}{% if membership.role == "owner" or membership.role == "manager" %}<a class="primary-action" href="{% url 'grove:create_plot' org.slug %}">+ Add plot</a>{% endif %}</div>
+  </header>
+  <nav class="grove-module-nav" aria-label="Farm workspace sections">
+    <a class="is-current" href="{% url 'grove:dashboard' org.slug %}">Overview</a>
+    {% if membership.role != "worker" %}<a href="{% url 'grove_finance:overview' org.slug %}">Finance</a>
+    <a href="{% url 'grove_carbon:overview' org.slug %}">Carbon estimate</a>
+    <a href="{% url 'grove_compliance:overview' org.slug %}">Compliance vault</a>{% endif %}
+    <a href="{% url 'grove_market:listings' %}">Marketplace</a>
+  </nav>
+  <section class="grove-stat-grid" aria-label="Farm overview">
+    <article><span>Registered trees</span><strong>{{ stats.tree_count }}</strong><small>Across all recorded batches</small></article>
+    <article><span>Managed plots</span><strong>{{ stats.plot_count }}</strong><small>Mapped work areas</small></article>
+    <article><span>Field team</span><strong>{{ stats.worker_count }}</strong><small>Workers in this workspace</small></article>
+    <article><span>Open tasks</span><strong>{{ stats.open_tasks }}</strong><small>Ready for the field team</small></article>
+  </section>
+  <div class="grove-content-grid">
+    <section class="grove-panel">
+      <header><div><p class="eyebrow">Your land</p><h2>Plots</h2></div>{% if membership.role == "owner" or membership.role == "manager" %}<a href="{% url 'grove:create_plot' org.slug %}">Add plot</a>{% endif %}</header>
+      {% for plot in plots %}
+        <a class="grove-list-row" href="{% url 'grove:plot_detail' org.slug plot.pk %}"><span class="grove-plot-icon" aria-hidden="true">⌖</span><span><strong>{{ plot.name }}</strong><small>{{ plot.area_hectares }} ha · {{ plot.tree_total|default:0 }} trees</small></span><span aria-hidden="true">→</span></a>
+      {% empty %}<p class="grove-empty-inline">Add your first mapped plot to start organizing work.</p>{% endfor %}
+    </section>
+    <section class="grove-panel">
+      <header><div><p class="eyebrow">Field work</p><h2>Tasks</h2></div>{% if membership.role == "owner" or membership.role == "manager" %}<a href="{% url 'grove:create_task' org.slug %}">Create task</a>{% endif %}</header>
+      {% for task in tasks %}
+        <div class="grove-task-row"><span class="task-priority task-priority--{{ task.priority }}"></span><span><strong>{{ task.title }}</strong><small>{{ task.plot.name }} · {% if task.assigned_to %}{{ task.assigned_to.username }}{% else %}Unassigned{% endif %} · Due {{ task.due_date }}</small></span>{% if task.completed_at %}<span class="grove-done">Done</span>{% elif membership.role == "owner" or membership.role == "manager" or task.assigned_to_id == user.id %}<form method="post" enctype="multipart/form-data" action="{% url 'grove:complete_task' org.slug task.pk %}">{% csrf_token %}<input type="file" name="proof_image" accept="image/*" aria-label="Optional task completion photo"><button class="text-action" type="submit">Complete</button></form>{% endif %}</div>
+      {% empty %}<p class="grove-empty-inline">Your team's next field task will show here.</p>{% endfor %}
+    </section>
+  </div>
+  <section class="grove-panel grove-panel-spaced"><header><div><p class="eyebrow">People</p><h2>Workspace team</h2></div></header>
+    {% for member in team %}<div class="grove-list-row"><span class="grove-org-mark" aria-hidden="true">{{ member.user.username|first|upper }}</span><span><strong>{{ member.user.get_full_name|default:member.user.username }}</strong><small>{{ member.get_role_display }}</small></span></div>{% endfor %}
+    {% if member_form %}<form method="post" action="{% url 'grove:add_member' org.slug %}" class="grove-inline-form">{% csrf_token %}<label>Add an existing account</label>{{ member_form.user }}{{ member_form.role }}<button class="secondary-action" type="submit">Add to team</button><small>Members must already have a Tree Plantation Tracker account.</small></form>{% endif %}
+  </section>
+  <p class="grove-value-note"><strong>Lead with value.</strong> Grove keeps operational records together so you can measure time, inputs, and outcomes against your own baseline.</p>
+</main>
+{% endblock %}

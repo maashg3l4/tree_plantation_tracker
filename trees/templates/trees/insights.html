@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Your Garden Insights{% endblock %}
+{% block content %}
+<main class="phase4-page">
+  <header class="phase4-heading"><p class="eyebrow">Your garden, growing</p><h1>Your Garden Insights</h1><p>A personal look at the trees and connections you’re nurturing.</p></header>
+  <section class="insight-metrics"><article><strong>{{ tree_count }}</strong><span>Trees shared</span></article><article><strong>{{ species_count }}</strong><span>Species</span></article><article><strong>{{ reaction_count }}</strong><span>Community reactions</span></article><article><strong>{{ follower_count }}</strong><span>Followers</span></article></section>
+  <section class="phase4-section insight-streak"><span class="streak-flame" aria-hidden="true">♨</span><div><strong>{{ streak.current_login }} day login streak</strong><small>Longest: {{ streak.longest_login }} days · Posting streak: {{ streak.current_post }} days</small></div><a href="{% url 'achievements' %}">See badges →</a></section>
+  <section class="phase4-section"><h2>Tree shares over the last six months</h2><div class="insight-months">{% for row in month_rows %}<div><span>{{ row.month|date:"M Y" }}</span><span class="insight-bar"><i style="height:{{ row.percent }}%"></i></span><strong>{{ row.total }}</strong></div>{% empty %}<p class="phase4-muted">Share a tree and your monthly story will start here.</p>{% endfor %}</div></section>
+  <section class="phase4-section"><h2>Your most-shared species</h2><div class="insight-species">{% for item in top_species %}<div><span>{{ item.species }}</span><strong>{{ item.total }}</strong></div>{% empty %}<p class="phase4-muted">Your species list will appear as you share trees.</p>{% endfor %}</div></section>
+</main>
+{% endblock %}

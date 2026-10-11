@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}You're offline{% endblock %}
+{% block content %}
+<main class="offline-page"><span class="offline-sprout" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 43V24m0 9C13 33 7 27 7 14c11 0 17 6 17 19Zm0-10c0-11 6-17 17-17 0 11-6 17-17 17Z"/></svg></span><h1>Your garden is taking a quiet moment.</h1><p>You’re offline. Reopen a recently visited community page when your connection returns.</p><button class="primary-action" type="button" onclick="window.location.reload()">Try again</button></main>
+{% endblock %}

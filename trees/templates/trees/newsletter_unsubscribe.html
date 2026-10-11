@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Unsubscribe from Canopy updates" %}{% endblock %}
+{% block content %}
+<main class="footer-confirmation">
+    <p class="eyebrow">{% trans "Newsletter preferences" %}</p>
+    <h1>{% trans "Unsubscribe from Canopy updates?" %}</h1>
+    {% if subscription.is_active %}
+        <p>{% blocktrans with email=subscription.email %}This will stop newsletter updates to {{ email }}.{% endblocktrans %}</p>
+        <form method="post">
+            {% csrf_token %}
+            <button class="primary-action" type="submit">{% trans "Unsubscribe" %}</button>
+        </form>
+    {% else %}
+        <p>{% trans "This email is already unsubscribed." %}</p>
+    {% endif %}
+</main>
+{% endblock %}

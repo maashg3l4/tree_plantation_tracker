@@ -1,0 +1,9 @@
+{% for comment in comments %}
+    <li class="tree-comment">
+        <span class="tree-comment-author">{{ comment.user.username }}</span>
+        <span>{{ comment.text }}</span>
+        <time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:'Y-m-d H:i' }}</time>
+    </li>
+{% empty %}
+    <li class="tree-comment-empty">No comments yet.</li>
+{% endfor %}

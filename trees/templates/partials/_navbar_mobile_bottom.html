@@ -1,0 +1,18 @@
+{% load i18n %}
+<nav class="canopy-bottom-nav" aria-label="{% trans 'Main navigation' %}">
+    <a class="canopy-bottom-item{% if request.resolver_match.url_name == 'tree_list' or request.resolver_match.url_name == 'home' %} is-active{% endif %}" href="{% url 'tree_list' %}"{% if request.resolver_match.url_name == 'tree_list' or request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg><span>{% trans "Home" %}</span>
+    </a>
+    <a class="canopy-bottom-item{% if request.resolver_match.url_name == 'discover' %} is-active{% endif %}" href="{% url 'discover' %}"{% if request.resolver_match.url_name == 'discover' %} aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4m-7-8 5 2-2 5-3-7Z"/></svg><span>{% trans "Discover" %}</span>
+    </a>
+    <button class="canopy-bottom-item canopy-bottom-create" type="button" data-post-open aria-label="{% trans 'Create a post' %}" aria-haspopup="dialog">
+        <span class="canopy-create-circle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>{% trans "Create" %}</span>
+    </button>
+    <a class="canopy-bottom-item{% if request.resolver_match.url_name == 'notifications' %} is-active{% endif %}" href="{% url 'notifications' %}"{% if request.resolver_match.url_name == 'notifications' %} aria-current="page"{% endif %}>
+        <span class="canopy-notification-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"/></svg>{% if mobile_unread_notifications %}<span class="canopy-notification-badge">{{ mobile_unread_notifications }}</span>{% endif %}</span><span>{% trans "Alerts" %}</span>
+    </a>
+    <a class="canopy-bottom-item{% if request.resolver_match.url_name == 'user_profile' or request.resolver_match.url_name == 'profile' %} is-active{% endif %}" href="{% if user.is_authenticated %}{% url 'user_profile' user.username %}{% else %}{% url 'login' %}{% endif %}"{% if request.resolver_match.url_name == 'user_profile' or request.resolver_match.url_name == 'profile' %} aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>{% trans "Profile" %}</span>
+    </a>
+</nav>

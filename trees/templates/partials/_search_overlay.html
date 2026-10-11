@@ -1,0 +1,14 @@
+{% load i18n %}
+<div class="canopy-search-backdrop" data-search-backdrop hidden>
+    <section class="canopy-search-dialog" role="dialog" aria-modal="true" aria-label="{% trans 'Search Canopy' %}" aria-labelledby="canopy-search-title">
+        <div class="canopy-search-box">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <form action="{% url 'search' %}" method="get" role="search">
+                <label class="sr-only" id="canopy-search-title" for="canopy-search-input">{% trans "Search people, trees, and species" %}</label>
+                <input id="canopy-search-input" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="{% trans 'Search people, trees, and species…' %}" autocomplete="off">
+            </form>
+            <button type="button" class="canopy-search-close" data-search-close>{% trans "Esc" %}</button>
+        </div>
+        <p class="canopy-search-hint">{% trans "Search the Canopy community" %}</p>
+    </section>
+</div>

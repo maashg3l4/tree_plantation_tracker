@@ -1,0 +1,10 @@
+{% extends "ops/base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<header class="ops-topbar"><div><p class="ops-side-label">Accountability</p><h1 class="ops-title">Audit log</h1><p class="ops-subtitle">Append-only record of moderation decisions and their before/after snapshots.</p></div></header>
+<form method="get" class="ops-actions" aria-label="Filter audit actions"><label class="ops-muted" for="audit-action">Action</label><select id="audit-action" name="action" class="ops-form-control" style="width:auto"><option value="">All actions</option>{% for value in actions %}<option value="{{ value }}" {% if selected_action == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select><button class="ops-button ops-button--muted" type="submit">Filter</button></form>
+<div class="ops-table-wrap" style="margin-top:1rem"><table class="ops-table"><thead><tr><th>When</th><th>Moderator</th><th>Action</th><th>Target</th><th>Reason</th><th>Change</th></tr></thead><tbody>
+{% for entry in page %}<tr><td>{{ entry.created_at|date:"M j, Y H:i:s" }}</td><td>{{ entry.actor_label }}</td><td><span class="ops-pill">{{ entry.action }}</span></td><td>{{ entry.target_label }}</td><td class="ops-reason">{{ entry.reason }}</td><td><details><summary>Snapshot</summary><small>Before: {{ entry.before }}<br>After: {{ entry.after }}</small></details></td></tr>{% empty %}<tr><td colspan="6" class="ops-empty">No audit entries yet.</td></tr>{% endfor %}
+</tbody></table></div>
+<nav class="ops-pagination" aria-label="Audit pagination"><span>{% if page.has_previous %}<a href="?action={{ selected_action }}&page={{ page.previous_page_number }}">← Previous</a>{% endif %}</span><span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span><span>{% if page.has_next %}<a href="?action={{ selected_action }}&page={{ page.next_page_number }}">Next →</a>{% endif %}</span></nav>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% load i18n %}
+<div class="canopy-drawer-backdrop" data-drawer-backdrop hidden>
+    <aside class="canopy-mobile-drawer" id="canopy-mobile-drawer" role="dialog" aria-modal="true" aria-label="{% trans 'Navigation menu' %}" tabindex="-1" data-drawer-panel>
+        <div class="canopy-drawer-top">
+            <span class="canopy-drawer-title">{% trans "Explore Canopy" %}</span>
+            <button class="canopy-icon-button" type="button" data-drawer-close aria-label="{% trans 'Close menu' %}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+        {% if user.is_authenticated %}
+            <a class="canopy-drawer-user" href="{% url 'user_profile' user.username %}">
+                {% if user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="">
+                {% else %}
+                    <span class="canopy-avatar-fallback" aria-hidden="true">{{ user.username|first|upper }}</span>
+                {% endif %}
+                <span><strong>{{ user.get_full_name|default:user.username }}</strong><small>@{{ user.username }}</small></span>
+            </a>
+        {% else %}
+            <div class="canopy-drawer-auth"><a href="{% url 'login' %}">{% trans "Log in" %}</a><a href="{% url 'signup_step1' %}">{% trans "Sign up" %}</a></div>
+        {% endif %}
+        <nav class="canopy-drawer-nav" aria-label="{% trans 'All navigation' %}">
+            <a href="{% url 'tree_list' %}"{% if request.resolver_match.url_name == 'tree_list' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg>{% trans "Community" %}</a>
+            <a href="{% url 'discover' %}"{% if request.resolver_match.url_name == 'discover' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4m-7-8 5 2-2 5-3-7Z"/></svg>{% trans "Discover" %}</a>
+            <a href="{% url 'leaderboard' %}"{% if request.resolver_match.url_name == 'leaderboard' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8m-4-4v4m-5-17h10v5a5 5 0 0 1-10 0V4Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4"/></svg>{% trans "Leaderboard" %}</a>
+            <a href="{% url 'daily_challenges' %}"{% if request.resolver_match.url_name == 'daily_challenges' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8m-4-4v4m-5-17h10v5a5 5 0 0 1-10 0V4Zm0 2H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4"/></svg>{% trans "Challenges" %}</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'garden_insights' %}"{% if request.resolver_match.url_name == 'garden_insights' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M7 14l4-4 3 3 6-7"/></svg>{% trans "Insights" %}</a>
+                <a href="{% url 'achievements' %}"{% if request.resolver_match.url_name == 'achievements' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="5"/><path d="m8 12-1 9 5-3 5 3-1-9"/></svg>{% trans "Badges" %}</a>
+            {% endif %}
+            <a href="{% url 'grove:workspace' %}"{% if request.path|slice:':6' == '/grove' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9m0 3C7 15 4 12 4 6c5 0 8 3 8 9Zm0-4c0-5 3-8 8-8 0 5-3 8-8 8Z"/></svg>{% trans "Grove" %}</a>
+            <a href="{% url 'grove_market:listings' %}"{% if request.path|slice:':7' == '/market' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2-5H5L3 9Zm2 0v11h14V9m-9 11v-6h4v6"/></svg>{% trans "Marketplace" %}</a>
+        </nav>
+        <div class="canopy-drawer-divider"></div>
+        <div class="canopy-theme-options" role="group" aria-label="{% trans 'Theme preference' %}">
+            <span>{% trans "Appearance" %}</span>
+            <button type="button" data-theme-choice="light">{% trans "Light" %}</button>
+            <button type="button" data-theme-choice="dark">{% trans "Dark" %}</button>
+            <button type="button" data-theme-choice="system">{% trans "System" %}</button>
+        </div>
+        {% if user.is_authenticated %}
+            <div class="canopy-drawer-divider"></div>
+            <a class="canopy-drawer-secondary" href="{% url 'user_profile' user.username %}">{% trans "Profile" %}</a>
+            <a class="canopy-drawer-secondary" href="{% url 'change_password' %}">{% trans "Settings" %}</a>
+            <a class="canopy-drawer-secondary canopy-logout-link" href="{% url 'logout' %}">{% trans "Log out" %}</a>
+        {% endif %}
+    </aside>
+</div>
