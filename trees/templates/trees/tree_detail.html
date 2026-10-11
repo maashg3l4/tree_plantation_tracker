@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tree_extras %}
 {% block title %}{{ tree.name }}{% endblock %}
 {% block content %}
 
@@ -20,6 +21,7 @@
         {% if tree.image %}
             <img src="{{ tree.image.url }}" class="img-fluid rounded mb-3" style="max-width: 300px;">
         {% endif %}
+        {% include "trees/partials/tree_health_chip.html" with tree=tree user=user %}
         <h4>🌿 Health Logs</h4>
         <ul class="list-group mb-3">
             {% for log in health_logs %}
@@ -51,24 +53,7 @@
                 <button type="submit" class="btn btn-primary">Comment</button>
             </div>
         </form>
-        <h4>👍 Reactions</h4>
-        <form method="POST" class="mb-3 d-flex align-items-center">
-            {% csrf_token %}
-            <input type="hidden" name="form_type" value="react">
-            <select name="reaction_type" class="form-select w-auto me-2">
-                <option value="like">👍 Like</option>
-                <option value="love">❤️ Love</option>
-                <option value="wow">😮 Wow</option>
-            </select>
-            <button type="submit" class="btn btn-outline-primary">React</button>
-        </form>
-        <div class="mb-3">
-            {% for reaction in reactions %}
-                <span class="badge bg-secondary me-1">{{ reaction.user.username }}: {{ reaction.type|title }}</span>
-            {% empty %}
-                <span class="text-muted">No reactions yet.</span>
-            {% endfor %}
-        </div>
+        {% include "trees/partials/impact_reaction_bar.html" with tree=tree impact_reaction_types=impact_reaction_types user=user %}
         {% if not tree.is_dead %}
             <a href="{% url 'add_health_log' tree.id %}" class="btn btn-outline-success fade-in-up mb-2">Add Health Log</a>
             <h4>🧑‍🌾 Scheduled Tasks</h4>

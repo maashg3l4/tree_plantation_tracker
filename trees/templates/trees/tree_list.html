@@ -1,186 +1,97 @@
 {% extends "base.html" %}
 {% block title %}Tree Feed{% endblock %}
 {% block content %}
-<h2 class="mb-3 animated-text fade-in-up">🌳 Tree Feed</h2>
-{% if user.is_authenticated %}
-<a class="btn btn-success mb-3 fade-in-up" href="/add/">➕ Share a New Tree</a>
-<a class="btn btn-outline-primary mb-3 ms-2 fade-in-up" href="/profile/">👤 Edit Profile</a>
-{% endif %}
-<div class="feed-list">
-    {% for tree in trees %}
-    <div class="card mb-4 shadow-sm" id="tree-card-{{ tree.id }}">
-        <div class="card-header d-flex align-items-center">
-            {% if tree.user.profile.profile_picture %}
-                <img src="{{ tree.user.profile.profile_picture.url }}" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">
-            {% else %}
-                <img src="https://ui-avatars.com/api/?name={{ tree.user.username }}" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">
-            {% endif %}
-            <span class="fw-bold me-2">{{ tree.user.username }}</span>
-            <span class="text-muted" style="font-size:0.9em;">planted on {{ tree.date_planted }}</span>
-            {% if user.is_authenticated and tree.user == user %}
-                <button class="btn btn-danger btn-sm ms-auto delete-tree-btn" data-tree-id="{{ tree.id }}">Delete</button>
-            {% endif %}
+<main class="feed-shell">
+    <header class="feed-heading">
+        <div>
+            <p class="eyebrow">Grow a greener future together</p>
+            <h1>Community tree feed</h1>
+            <p class="feed-intro">Real trees, shared progress, and small actions that add up.</p>
         </div>
-        <div class="card-body">
-            <h4 class="card-title mb-2">
-                <a href="{{ tree.id }}/" class="text-decoration-none {% if tree.is_dead %}text-white{% endif %}">
-                    {{ tree.name }}{% if tree.species %} ({{ tree.species }}){% endif %}
-                </a>
-            </h4>
-            {% if tree.image %}
-                <img src="{{ tree.image.url }}" class="img-fluid rounded mb-3" style="max-width: 350px;">
-            {% endif %}
-            <p class="mb-1"><strong>Location:</strong>
-                {% if tree.latitude and tree.longitude %}
-                    <a href="https://www.openstreetmap.org/?mlat={{ tree.latitude }}&mlon={{ tree.longitude }}#map=18/{{ tree.latitude }}/{{ tree.longitude }}" target="_blank">
-                        {{ tree.location }}
-                    </a>
-                {% else %}
-                    {{ tree.location }}
-                {% endif %}
-            </p>
-            <p class="mb-1"><strong>Status:</strong> {% if tree.is_dead %}<span class="badge bg-danger">Dead</span>{% else %}<span class="badge bg-success">Alive</span>{% endif %}</p>
-            <p class="mb-1"><strong>Last Update:</strong> {{ tree.updated_at|date:'Y-m-d H:i' }}</p>
-            <div class="d-flex align-items-center mt-2">
-                {% if user.is_authenticated %}
-                <form class="react-form me-2" data-tree-id="{{ tree.id }}">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="react">
-                    <button name="reaction_type" value="like" class="btn btn-sm btn-outline-primary">👍 Like</button>
-                    <button name="reaction_type" value="love" class="btn btn-sm btn-outline-danger">❤️ Love</button>
-                    <button name="reaction_type" value="wow" class="btn btn-sm btn-outline-warning">😮 Wow</button>
-                    <button name="reaction_type" value="sad" class="btn btn-sm btn-outline-secondary">😢 Sad</button>
-                </form>
-                {% endif %}
-                <span class="ms-2 reaction-counts">
-                    <span class="me-2">👍 <span class="like-count">{{ tree.like_count }}</span></span>
-                    <span class="me-2">❤️ <span class="love-count">{{ tree.love_count }}</span></span>
-                    <span class="me-2">😮 <span class="wow-count">{{ tree.wow_count }}</span></span>
-                    <span class="me-2">😢 <span class="sad-count">{{ tree.sad_count }}</span></span>
-                </span>
-                <a href="/{{ tree.id }}/" class="btn btn-link btn-sm ms-auto">Details</a>
-            </div>
-            <div class="mt-3">
-                {% if user.is_authenticated %}
-                <form class="comment-form" data-tree-id="{{ tree.id }}">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="comment">
-                    <div class="input-group">
-                        <input type="text" name="comment_text" class="form-control" placeholder="Write a comment..." required>
-                        <button type="submit" class="btn btn-primary">Comment</button>
+        {% if user.is_authenticated %}
+            <a class="primary-action" href="{% url 'add_tree' %}">Share a tree</a>
+        {% else %}
+            <a class="primary-action" href="{% url 'register' %}">Join the community</a>
+        {% endif %}
+    </header>
+    <div class="feed-list">
+        {% for tree in trees %}
+            <article class="tree-card" id="tree-card-{{ tree.id }}">
+                <header class="tree-card-header">
+                    {% if tree.profile_picture %}
+                        <img src="{{ tree.profile_picture.url }}" class="tree-avatar" alt="">
+                    {% else %}
+                        <span class="tree-avatar tree-avatar-fallback" aria-hidden="true">{{ tree.user.username|first|upper }}</span>
+                    {% endif %}
+                    <div class="tree-author">
+                        <strong>{{ tree.user.username }}</strong>
+                        <span>Planted {{ tree.date_planted|date:'M j, Y' }}</span>
                     </div>
-                </form>
-                {% endif %}
-                <ul class="list-group list-group-flush mt-2 comment-list">
-                    {% for comment in tree.comments.all %}
-                        <li class="list-group-item">
-                            <span class="fw-bold">{{ comment.user.username }}</span>: {{ comment.text }}
-                            <span class="text-muted float-end" style="font-size:0.9em;">{{ comment.created_at|date:'Y-m-d H:i' }}</span>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item text-muted">No comments yet.</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
+                    <span class="tree-status tree-status--{{ tree.feed_status }}">{{ tree.feed_status|title }}</span>
+                    {% if user.is_authenticated and tree.user == user %}
+                        <button class="tree-delete" type="button" data-delete-url="{% url 'delete_tree' tree.id %}" data-tree-id="{{ tree.id }}">
+                            Delete
+                        </button>
+                    {% endif %}
+                </header>
+                <div class="tree-card-content">
+                    <h2><a href="{% url 'tree_detail' tree.id %}">{{ tree.name }}{% if tree.species %}<span> · {{ tree.species }}</span>{% endif %}</a></h2>
+                    {% if tree.image %}
+                        <img src="{{ tree.image.url }}" class="tree-photo" alt="A {{ tree.species|default:'tree' }} named {{ tree.name }}">
+                    {% endif %}
+                    <dl class="tree-facts">
+                        <div><dt>Location</dt><dd>
+                            {% if tree.latitude and tree.longitude %}
+                                <a href="https://www.openstreetmap.org/?mlat={{ tree.latitude }}&mlon={{ tree.longitude }}#map=18/{{ tree.latitude }}/{{ tree.longitude }}" target="_blank" rel="noopener noreferrer">{{ tree.location|default:"View map" }}</a>
+                            {% else %}
+                                {{ tree.location|default:"Location not provided" }}
+                            {% endif %}
+                        </dd></div>
+                        <div><dt>Last updated</dt><dd>{{ tree.updated_at|date:'M j, Y · H:i' }}</dd></div>
+                    </dl>
+                    {% include "trees/partials/tree_health_chip.html" with tree=tree user=user %}
+                    {% include "trees/partials/impact_reaction_bar.html" with tree=tree impact_reaction_types=impact_reaction_types user=user %}
+                    <section class="tree-comments">
+                        <h3>Community notes <span>({{ tree.comments.all|length }})</span></h3>
+                        {% if user.is_authenticated %}
+                            <form
+                                class="comment-form"
+                                method="post"
+                                action="{% url 'react_or_comment' %}"
+                                hx-post="{% url 'react_or_comment' %}"
+                                hx-target="#tree-comments-{{ tree.id }}"
+                                hx-swap="innerHTML"
+                            >
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="comment">
+                                <input type="hidden" name="tree_id" value="{{ tree.id }}">
+                                <label class="sr-only" for="comment-{{ tree.id }}">Write a comment</label>
+                                <input id="comment-{{ tree.id }}" name="comment_text" maxlength="1000" required placeholder="Add a thoughtful note…">
+                                <button type="submit">Comment</button>
+                            </form>
+                        {% endif %}
+                        <ul class="tree-comment-list" id="tree-comments-{{ tree.id }}">
+                            {% for comment in tree.comments.all %}
+                                <li class="tree-comment">
+                                    <span class="tree-comment-author">{{ comment.user.username }}</span>
+                                    <span>{{ comment.text }}</span>
+                                    <time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:'Y-m-d H:i' }}</time>
+                                </li>
+                            {% empty %}
+                                <li class="tree-comment-empty">No comments yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                    <a class="tree-details-link" href="{% url 'tree_detail' tree.id %}">View tree details <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+        {% empty %}
+            <section class="feed-empty">
+                <h2>Your community’s first tree starts here.</h2>
+                <p>Share a planting to create the first story in this feed.</p>
+                {% if user.is_authenticated %}<a class="primary-action" href="{% url 'add_tree' %}">Share a tree</a>{% endif %}
+            </section>
+        {% endfor %}
     </div>
-    {% empty %}
-        <div class="alert alert-info">No trees found.</div>
-    {% endfor %}
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-// AJAX for reactions
-const reactForms = document.querySelectorAll('.react-form');
-reactForms.forEach(form => {
-    let lastClicked = null;
-    form.querySelectorAll('button[name="reaction_type"]').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            lastClicked = this.value;
-        });
-    });
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const treeId = this.getAttribute('data-tree-id');
-        const formData = new FormData(this);
-        if (lastClicked) {
-            formData.set('reaction_type', lastClicked);
-        }
-        formData.append('tree_id', treeId);
-        fetch('/ajax/react_or_comment/', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const card = document.getElementById('tree-card-' + treeId);
-                card.querySelector('.like-count').textContent = data.counts.like;
-                card.querySelector('.love-count').textContent = data.counts.love;
-                card.querySelector('.wow-count').textContent = data.counts.wow;
-                card.querySelector('.sad-count').textContent = data.counts.sad;
-            } else if (data.error) {
-                alert(data.error);
-            }
-        });
-        lastClicked = null;
-    });
-});
-// AJAX for comments
-const commentForms = document.querySelectorAll('.comment-form');
-commentForms.forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const treeId = this.getAttribute('data-tree-id');
-        const formData = new FormData(this);
-        formData.append('tree_id', treeId);
-        fetch('/ajax/react_or_comment/', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const card = document.getElementById('tree-card-' + treeId);
-                const commentList = card.querySelector('.comment-list');
-                commentList.innerHTML = '';
-                if (data.comments.length === 0) {
-                    commentList.innerHTML = '<li class="list-group-item text-muted">No comments yet.</li>';
-                } else {
-                    data.comments.forEach(c => {
-                        commentList.innerHTML += `<li class="list-group-item"><span class="fw-bold">${c.user__username}</span>: ${c.text} <span class="text-muted float-end" style="font-size:0.9em;">${c.created_at.slice(0,16).replace('T',' ')}</span></li>`;
-                    });
-                }
-                form.reset();
-            } else if (data.error) {
-                alert(data.error);
-            }
-        });
-    });
-});
-// AJAX for delete tree
-const deleteBtns = document.querySelectorAll('.delete-tree-btn');
-deleteBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to delete this tree post?')) {
-            const treeId = this.getAttribute('data-tree-id');
-            fetch(`/ajax/delete_tree/${treeId}/`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('tree-card-' + treeId).remove();
-                } else if (data.error) {
-                    alert(data.error);
-                }
-            });
-        }
-    });
-});
-});
-</script>
+</main>
 {% endblock %}

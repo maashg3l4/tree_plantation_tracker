@@ -5,7 +5,7 @@ from .location_data import COUNTRIES
 class TreeForm(forms.ModelForm):
     latitude = forms.FloatField(widget=forms.HiddenInput(), required=False)
     longitude = forms.FloatField(widget=forms.HiddenInput(), required=False)
-    species = forms.CharField(required=False)  # Make species not required
+    species = forms.CharField(required=False, widget=forms.TextInput(attrs={'id': 'id_species'}))
     country = forms.ChoiceField(choices=COUNTRIES, required=False)
     division = forms.CharField(required=False)
     district = forms.CharField(required=False)
@@ -13,7 +13,10 @@ class TreeForm(forms.ModelForm):
 
     class Meta:
         model = Tree
-        fields = ['name', 'species', 'country', 'division', 'district', 'other_location', 'location', 'latitude', 'longitude', 'date_planted', 'image']
+        fields = [
+            'name', 'species', 'country', 'division', 'district', 'other_location',
+            'location', 'latitude', 'longitude', 'date_planted', 'image',
+        ]
         widgets = {
             'date_planted': forms.DateInput(attrs={'type': 'date'}),
         }

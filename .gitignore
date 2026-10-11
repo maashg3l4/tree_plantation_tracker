@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+env/
+.venv/
+node_modules/
+db.sqlite3
+media/
+staticfiles/

@@ -5,6 +5,54 @@
 {% if message %}
 <div class="alert alert-success">{{ message }}</div>
 {% endif %}
+<section class="impact-dashboard" aria-labelledby="impact-dashboard-title">
+  <h3 id="impact-dashboard-title">Your environmental impact</h3>
+  <dl class="impact-metrics">
+    <div><dt>Impact score</dt><dd>{{ impact_score.total_score }}</dd></div>
+    <div><dt>Trees planted</dt><dd>{{ impact_score.trees_planted }}</dd></div>
+    <div><dt>Pledges made</dt><dd>{{ impact_score.pledges_made }}</dd></div>
+    <div><dt>Help offers</dt><dd>{{ impact_score.help_offered }}</dd></div>
+  </dl>
+  <div class="impact-dashboard-columns">
+    <section aria-labelledby="pledge-queue-title">
+      <h4 id="pledge-queue-title">Pledge queue</h4>
+      <ul class="impact-dashboard-list">
+        {% for pledge in pledges %}
+          <li>
+            <span>
+              {% if pledge.source_post %}<a href="{% url 'tree_detail' pledge.source_post_id %}">{% endif %}
+              {{ pledge.species|default:"A tree" }}
+              {% if pledge.source_post %}</a>{% endif %}
+              · {{ pledge.get_status_display }}
+            </span>
+            {% if pledge.status == 'pending' %}
+              <form method="post" action="{% url 'update_pledge_status' pledge.id %}">
+                {% csrf_token %}
+                <button name="status" value="planted" type="submit">Mark planted</button>
+                <button name="status" value="abandoned" type="submit">Abandon</button>
+              </form>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li class="impact-dashboard-empty">Your planting pledges will appear here.</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section aria-labelledby="notification-title">
+      <h4 id="notification-title">Recent notifications</h4>
+      <ul class="impact-dashboard-list">
+        {% for notification in notifications %}
+          <li>
+            <span><strong>{{ notification.actor.username }}</strong> pledged after seeing <a href="{% url 'tree_detail' notification.tree_id %}">{{ notification.tree.name }}</a>.</span>
+            <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'M j, Y H:i' }}</time>
+          </li>
+        {% empty %}
+          <li class="impact-dashboard-empty">Pledge notifications will appear here.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</section>
 <div class="row">
   <div class="col-md-6">
     <form method="POST" enctype="multipart/form-data">

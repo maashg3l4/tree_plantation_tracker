@@ -1,0 +1,11 @@
+{
+  "name": "tree-plantation-tracker",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./trees/static_src/trees/app.css -o ./trees/static/trees/app.css --minify",
+    "watch:css": "tailwindcss -i ./trees/static_src/trees/app.css -o ./trees/static/trees/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

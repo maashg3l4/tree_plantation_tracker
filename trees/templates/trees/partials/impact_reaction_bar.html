@@ -1,0 +1,101 @@
+{% load tree_extras %}
+<section
+    class="impact-reactions"
+    x-data="impactReactions($el)"
+    x-init="init()"
+    data-tree-id="{{ tree.id }}"
+    data-tree-status="{{ tree.feed_status }}"
+    data-has-health-data="{{ tree.has_health_data|yesno:'true,false' }}"
+    data-endpoint="{% url 'react_or_comment' %}"
+    data-count-planted="{{ tree.reaction_counts.planted }}"
+    data-count-inspiring="{{ tree.reaction_counts.inspiring }}"
+    data-count-care="{{ tree.reaction_counts.care }}"
+    data-count-help="{{ tree.reaction_counts.help }}"
+    data-count-insight="{{ tree.reaction_counts.insight }}"
+    data-user-reactions="{{ tree.reaction_state }}"
+    aria-label="Impact reactions"
+>
+    {% csrf_token %}
+    <div class="impact-reaction-list" role="group" aria-label="Choose an impact reaction">
+        {% for reaction_type, reaction_label in impact_reaction_types %}
+            <button
+                class="impact-reaction impact-reaction--{{ reaction_type }}{% if reaction_type in tree.user_reaction_state %} is-active{% endif %}"
+                type="button"
+                data-reaction-key="{{ reaction_type }}"
+                data-intensity="{{ tree.user_reaction_state|get_item:reaction_type|default:'0' }}"
+                aria-label="{{ reaction_label }}"
+                aria-pressed="{% if reaction_type in tree.user_reaction_state %}true{% else %}false{% endif %}"
+                title="{{ reaction_label }} (hold to deepen, double-click for deep commitment)"
+                {% if user.is_authenticated %}
+                    @pointerdown="startPress('{{ reaction_type }}', $event)"
+                    @pointerup="endPress('{{ reaction_type }}')"
+                    @pointerleave="endPress('{{ reaction_type }}')"
+                    @click="tapReaction('{{ reaction_type }}')"
+                {% else %}
+                    disabled
+                {% endif %}
+            >
+                <svg class="impact-icon" aria-hidden="true"><use href="#icon-{{ reaction_type }}"></use></svg>
+                <span>{{ reaction_label }}</span>
+                <span class="impact-count" data-count-for="{{ reaction_type }}">{{ tree.reaction_counts|get_item:reaction_type }}</span>
+            </button>
+        {% endfor %}
+    </div>
+    {% if user.is_authenticated %}
+        <label class="impact-note-label">
+            Add a short note <span>(optional)</span>
+            <input
+                type="text"
+                maxlength="140"
+                x-model="note"
+                class="impact-note"
+                placeholder="Share why this matters to you"
+            >
+        </label>
+        <p class="impact-error" x-show="error" x-text="error" role="alert"></p>
+        <p class="sr-only" aria-live="polite" x-text="announcement"></p>
+        <ol class="impact-timeline" data-reaction-timeline aria-label="Latest reactions">
+            {% for reaction in tree.latest_reactions %}
+                <li>
+                    <strong>@{{ reaction.user.username }}</strong>:
+                    {{ reaction.get_reaction_display }}{% if reaction.note %} — “{{ reaction.note }}”{% endif %}
+                    <time datetime="{{ reaction.created_at|date:'c' }}">{{ reaction.created_at|timesince }} ago</time>
+                </li>
+            {% empty %}
+                <li class="impact-timeline-empty">Be the first to make an impact.</li>
+            {% endfor %}
+        </ol>
+        <div class="impact-help-backdrop" x-cloak x-show="helpOpen" x-transition.opacity>
+            <form class="impact-help-modal" @submit.prevent="submitHelp()" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+                <h3 id="help-modal-title">Offer practical help</h3>
+                <label>
+                    How can you help?
+                    <select x-model="helpType" required>
+                        <option value="water">Watering</option>
+                        <option value="visit">Visit</option>
+                        <option value="donate">Donate</option>
+                        <option value="share">Share location</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+                <label>
+                    Message <span>(optional)</span>
+                    <textarea x-model="helpMessage" rows="3" maxlength="1000"></textarea>
+                </label>
+                <div class="impact-modal-actions">
+                    <button type="button" class="impact-modal-cancel" @click="helpOpen = false">Cancel</button>
+                    <button type="submit" class="impact-modal-submit" :disabled="sending">Send offer</button>
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <p class="impact-login-prompt"><a href="{% url 'login' %}">Sign in</a> to share an impact reaction.</p>
+        <ol class="impact-timeline" aria-label="Latest reactions">
+            {% for reaction in tree.latest_reactions %}
+                <li><strong>@{{ reaction.user.username }}</strong>: {{ reaction.get_reaction_display }} <time>{{ reaction.created_at|timesince }} ago</time></li>
+            {% empty %}
+                <li class="impact-timeline-empty">Be the first to make an impact.</li>
+            {% endfor %}
+        </ol>
+    {% endif %}
+</section>

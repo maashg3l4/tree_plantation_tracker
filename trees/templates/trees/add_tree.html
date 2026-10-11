@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Add Tree{% endblock %}
 {% block content %}
 
 <h2 class="mb-4 animated-text fade-in-up">Add a New Tree</h2>
 <div class="card p-4 shadow-sm">
-    <form method="POST" enctype="multipart/form-data" id="tree-form">
+    <form method="POST" enctype="multipart/form-data" id="tree-form" data-identify-url="{% url 'identify_tree_species' %}">
         {% csrf_token %}
         {% if form.errors %}
             <div class="alert alert-danger">
@@ -62,12 +63,19 @@
         <div class="mb-3">
             {{ form.image.label_tag }}
             {{ form.image }}
+            <p class="species-analysis-status" id="species-analysis-status" aria-live="polite"></p>
+            <div class="species-results" id="species-results" hidden>
+                <p id="species-analysis-warning" class="species-analysis-warning" hidden></p>
+                <p id="species-provider-note" class="species-provider-note"></p>
+                <ol id="species-predictions" class="species-predictions"></ol>
+            </div>
         </div>
         <button type="submit" class="btn btn-success fade-in-up" id="submit-btn">Submit</button>
     </form>
 </div>
 
 <a href="/" class="btn btn-secondary mt-3 fade-in-up">&larr; Back to Tree List</a>
+<script src="{% static 'trees/ai-identification.js' %}" defer></script>
 
 <!-- Leaflet.js for free map integration -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
