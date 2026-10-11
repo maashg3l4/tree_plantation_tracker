@@ -105,30 +105,62 @@ and physical iOS/Android device testing are not configured yet.
 
 ## Vercel deployment
 
-The Django app has a Vercel Python entry point and daily engagement cron, but
-deployment requires managed services because Vercel functions do not provide
-persistent local database or upload storage:
+The Vercel Python function is stateless, so production needs durable database
+and media storage services. To start without a monthly subscription, use
+providers' free tiers (for example, Neon PostgreSQL and Cloudflare R2) together
+with Vercel Hobby. Free quotas and eligibility can change; check each provider's
+current limits and billing settings first. This is not a guaranteed zero-cost
+service: exceeding a storage, request, or bandwidth allowance may incur charges
+depending on the provider and account settings. Do not add a payment method or
+upgrade a plan if you do not accept that risk.
 
-1. Create a managed PostgreSQL database and an S3-compatible object bucket
-   (for example, Cloudflare R2). Keep the bucket private; file links use signed
-   URLs.
-2. Configure Vercel environment variables: `DJANGO_SECRET_KEY`,
-   `DATABASE_URL` (PostgreSQL URL with TLS), `AWS_STORAGE_BUCKET_NAME`,
-   `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT_URL`,
-   `AWS_S3_REGION_NAME` (usually `auto` for R2), `CRON_SECRET`,
-   `GEMINI_API_KEY` (optional; curated challenges are used when absent), and
-   `PLANTNET_API_KEY` (optional). Add any production Vercel origin to
-   `CSRF_TRUSTED_ORIGINS` when your deployment needs it. Production redirects
-   to HTTPS and starts with a one-hour HSTS policy; increase
-   `SECURE_HSTS_SECONDS` only after verifying all intended domains use HTTPS.
-3. Before the first deployment, point a trusted local environment at the
-   managed database and run `python manage.py migrate`. Import any existing
-   SQLite records and copy media files to the bucket separately; deployment
-   does not automatically migrate local data.
-4. Deploy the repository through Vercel. The Python function serves Django
-   and WhiteNoise serves collected static files. The daily cron runs at
-   00:00 UTC (06:00 Bangladesh time) to publish scheduled posts, create the
-   next AI-or-curated challenge, and queue in-app reminders.
+1. Create a **new, empty** PostgreSQL database and a private S3-compatible
+   object-storage bucket. Do not use the local `db.sqlite3` as production data;
+   local accounts, posts, and uploads are not automatically published.
+2. Import this GitHub repository into Vercel and set its Production Branch to
+   `maashg3l4-impact-reaction-phase-1`. Keep Preview deployments disabled until
+   a separate preview database and storage bucket are configured.
+3. Add production-only environment variables in Vercel Project Settings. Never
+   commit them, paste them into chat, or use the example values as credentials:
+
+   | Variable | Value |
+   | --- | --- |
+   | `DJANGO_DEBUG` | `false` |
+   | `DJANGO_SECRET_KEY` | New, randomly generated secret |
+   | `DATABASE_URL` | PostgreSQL connection URL with TLS enabled |
+   | `AWS_STORAGE_BUCKET_NAME` | Private media bucket name |
+   | `AWS_ACCESS_KEY_ID` | Bucket access key |
+   | `AWS_SECRET_ACCESS_KEY` | Bucket secret key |
+   | `AWS_S3_ENDPOINT_URL` | Provider's S3-compatible endpoint |
+   | `AWS_S3_REGION_NAME` | Provider's region; `auto` for Cloudflare R2 |
+   | `CRON_SECRET` | Separate, randomly generated secret |
+
+   `GEMINI_API_KEY` and `PLANTNET_API_KEY` are optional. Add
+   `CSRF_TRUSTED_ORIGINS` with your exact `https://` site origin if you add a
+   custom domain. Do not enable a paid provider feature solely to follow this
+   guide.
+4. Connect the project with Vercel CLI from a trusted computer (`npm install
+   --global vercel`, `vercel login`, then `vercel link`). Apply the schema to
+   the new production database before inviting users:
+
+   ```powershell
+   vercel env run --environment=production -- py -3.13 manage.py migrate --noinput
+   ```
+
+   Create a production superuser against that same database using the same
+   environment command with `createsuperuser`; choose a unique password and
+   keep it private. Do not reuse the local development credentials.
+5. Deploy the connected branch from Vercel. The configured build collects
+   static assets; Vercel's Python function serves Django. The daily cron runs
+   at 00:00 UTC (06:00 Bangladesh time) and requires the configured
+   `CRON_SECRET`. Check the Vercel deployment/build logs, `/api/status/`, admin
+   login, media uploads, and cron logs before sharing the URL with friends.
+
+Free services may pause inactive projects, impose small resource limits, or
+change their plans. This setup is for a small demo, not a production guarantee.
+The newsletter currently stores addresses but does not send emails. Configure
+and publish real privacy/terms pages and a transactional email service before
+collecting addresses from the public.
 
 The Vercel setup does not configure transactional email or external data
 imports. Verify database backups, bucket access policies, provider credentials,
