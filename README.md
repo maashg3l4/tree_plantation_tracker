@@ -139,12 +139,13 @@ upgrade a plan if you do not accept that risk.
    `CSRF_TRUSTED_ORIGINS` with your exact `https://` site origin if you add a
    custom domain. Do not enable a paid provider feature solely to follow this
    guide.
-4. Deploy the connected branch from Vercel. The build applies Django migrations
-   to the configured production database before collecting static assets. This
-   requires the Production `DATABASE_URL` and other required settings to be
-   present in the Vercel build environment. Review schema changes before
-   deploying; migrations run during every build and should remain backward
-   compatible with the currently serving version.
+4. Deploy the connected branch from Vercel. For an empty database, temporarily
+   add the Production environment variable `VERCEL_RUN_MIGRATIONS=true` and
+   redeploy. The first function startup applies Django migrations before
+   serving the request. Remove this variable and redeploy after the first
+   successful request; do not leave it enabled, because serverless instances
+   can start concurrently. Review schema changes before deployment and apply
+   future migrations through a trusted release process.
 5. Create a production superuser using a trusted environment that can access
    the production database; choose a unique password and keep it private. Do
    not reuse local development credentials. Vercel's Python function serves

@@ -11,7 +11,7 @@
       "dest": "api/index.py"
     }
   ],
-  "buildCommand": "python manage.py migrate --noinput && python manage.py collectstatic --noinput",
+  "buildCommand": "python manage.py collectstatic --noinput",
   "crons": [
     {
       "path": "/api/cron/daily-engagement/",
