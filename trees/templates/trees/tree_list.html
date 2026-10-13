@@ -38,9 +38,9 @@
                     <h2><a href="{% url 'tree_detail' tree.id %}">{{ tree.name }}{% if tree.species %}<span> · {{ tree.species }}</span>{% endif %}</a></h2>
                     {% if tree.caption %}<p class="tree-caption">{{ tree.caption|linebreaksbr }}</p>{% endif %}
                     {% if tree.image %}
-                        <img src="{{ tree.image.url }}" class="tree-photo" alt="A {{ tree.species|default:'tree' }} named {{ tree.name }}">
+                        <img src="{{ tree.image.url }}" class="tree-photo" alt="A {{ tree.species|default:'tree' }} named {{ tree.name }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async"{% if forloop.first %} fetchpriority="high"{% endif %}>
                     {% endif %}
-                    {% for media in tree.media.all %}{% if media.media_type == "video" %}<video class="tree-photo" controls preload="metadata"><source src="{{ media.file.url }}"></video>{% else %}<img src="{{ media.file.url }}" class="tree-photo" loading="lazy" alt="More of {{ tree.name }}">{% endif %}{% endfor %}
+                    {% for media in tree.media.all %}{% if media.media_type == "video" %}<video class="tree-photo" controls preload="metadata"><source src="{{ media.file.url }}"></video>{% else %}<img src="{{ media.file.url }}" class="tree-photo" loading="lazy" decoding="async" alt="More of {{ tree.name }}">{% endif %}{% endfor %}
                     {% if tree.hashtags.all %}<p class="tree-hashtags">{% for hashtag in tree.hashtags.all %}<a href="{% url 'search' %}?q=%23{{ hashtag.tag|urlencode }}">#{{ hashtag.tag }}</a> {% endfor %}</p>{% endif %}
                     <dl class="tree-facts">
                         <div><dt>Location</dt><dd>
@@ -96,5 +96,20 @@
             </section>
         {% endfor %}
     </div>
+    {% if is_paginated %}
+        <nav class="feed-pagination" aria-label="Tree feed pages">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" rel="prev">Newer stories</a>
+            {% else %}
+                <span aria-disabled="true">Newer stories</span>
+            {% endif %}
+            <span class="feed-pagination-current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" rel="next">Older stories</a>
+            {% else %}
+                <span aria-disabled="true">Older stories</span>
+            {% endif %}
+        </nav>
+    {% endif %}
 </main>
 {% endblock %}
