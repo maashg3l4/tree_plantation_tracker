@@ -139,19 +139,16 @@ upgrade a plan if you do not accept that risk.
    `CSRF_TRUSTED_ORIGINS` with your exact `https://` site origin if you add a
    custom domain. Do not enable a paid provider feature solely to follow this
    guide.
-4. Connect the project with Vercel CLI from a trusted computer (`npm install
-   --global vercel`, `vercel login`, then `vercel link`). Apply the schema to
-   the new production database before inviting users:
-
-   ```powershell
-   vercel env run --environment=production -- py -3.13 manage.py migrate --noinput
-   ```
-
-   Create a production superuser against that same database using the same
-   environment command with `createsuperuser`; choose a unique password and
-   keep it private. Do not reuse the local development credentials.
-5. Deploy the connected branch from Vercel. The configured build collects
-   static assets; Vercel's Python function serves Django. The daily cron runs
+4. Deploy the connected branch from Vercel. The build applies Django migrations
+   to the configured production database before collecting static assets. This
+   requires the Production `DATABASE_URL` and other required settings to be
+   present in the Vercel build environment. Review schema changes before
+   deploying; migrations run during every build and should remain backward
+   compatible with the currently serving version.
+5. Create a production superuser using a trusted environment that can access
+   the production database; choose a unique password and keep it private. Do
+   not reuse local development credentials. Vercel's Python function serves
+   Django after deployment. The daily cron runs
    at 00:00 UTC (06:00 Bangladesh time) and requires the configured
    `CRON_SECRET`. Check the Vercel deployment/build logs, `/api/status/`, admin
    login, media uploads, and cron logs before sharing the URL with friends.
