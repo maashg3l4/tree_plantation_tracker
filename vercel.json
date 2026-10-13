@@ -1,17 +1,14 @@
 {
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
   "routes": [
+    {
+      "handle": "filesystem"
+    },
     {
       "src": "/(.*)",
       "dest": "api/index.py"
     }
   ],
-  "buildCommand": "python manage.py collectstatic --noinput",
+  "buildCommand": "python scripts/collectstatic_for_vercel.py",
   "crons": [
     {
       "path": "/api/cron/daily-engagement/",
