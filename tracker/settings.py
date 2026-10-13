@@ -18,13 +18,6 @@ DEBUG = os.environ.get(
     "DJANGO_DEBUG", "false" if os.environ.get("VERCEL") else "true"
 ).lower() == "true"
 
-if not DEBUG and not os.environ.get("DJANGO_SECRET_KEY"):
-    raise RuntimeError("DJANGO_SECRET_KEY must be configured when DEBUG is disabled.")
-if os.environ.get("VERCEL") and not os.environ.get("DATABASE_URL"):
-    raise RuntimeError("Configure a managed PostgreSQL DATABASE_URL for Vercel.")
-if os.environ.get("VERCEL") and not os.environ.get("AWS_STORAGE_BUCKET_NAME"):
-    raise RuntimeError("Configure S3-compatible object storage before deploying to Vercel.")
-
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
