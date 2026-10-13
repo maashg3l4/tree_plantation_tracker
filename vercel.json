@@ -1,13 +1,4 @@
 {
-  "routes": [
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
-  ],
   "buildCommand": "python scripts/collectstatic_for_vercel.py",
   "crons": [
     {
