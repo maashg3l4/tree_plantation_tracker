@@ -19,6 +19,15 @@ class ProfileForm(forms.ModelForm):
             'account_type',
             'language',
         ]
+        widgets = {
+            'profile_picture': forms.ClearableFileInput(attrs={'class': 'settings-file-input'}),
+            'cover_image': forms.ClearableFileInput(attrs={'class': 'settings-file-input'}),
+            'bio': forms.Textarea(attrs={'class': 'settings-field', 'rows': 4}),
+            'location': forms.TextInput(attrs={'class': 'settings-field', 'autocomplete': 'address-level2'}),
+            'website': forms.URLInput(attrs={'class': 'settings-field', 'autocomplete': 'url'}),
+            'account_type': forms.Select(attrs={'class': 'settings-field'}),
+            'language': forms.Select(attrs={'class': 'settings-field'}),
+        }
 
 class UserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -28,6 +37,10 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['username', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'settings-field', 'autocomplete': 'username'}),
+            'email': forms.EmailInput(attrs={'class': 'settings-field', 'autocomplete': 'email'}),
+        }
 
     def clean_username(self):
         username = self.cleaned_data['username'].strip()
@@ -46,6 +59,18 @@ class UserForm(forms.ModelForm):
         return username
 
 class PasswordChangeForm(forms.Form):
-    old_password = forms.CharField(widget=forms.PasswordInput, required=True, label='Old password')
-    new_password1 = forms.CharField(widget=forms.PasswordInput, required=True, label='New password')
-    new_password2 = forms.CharField(widget=forms.PasswordInput, required=True, label='Confirm password')
+    old_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'settings-field', 'autocomplete': 'current-password'}),
+        required=True,
+        label='Old password',
+    )
+    new_password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'settings-field', 'autocomplete': 'new-password'}),
+        required=True,
+        label='New password',
+    )
+    new_password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'settings-field', 'autocomplete': 'new-password'}),
+        required=True,
+        label='Confirm password',
+    )

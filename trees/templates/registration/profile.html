@@ -1,84 +1,118 @@
 {% extends "base.html" %}
-{% block title %}Edit Profile{% endblock %}
+{% block title %}Settings · Canopy{% endblock %}
 {% block content %}
-<h2>Edit Profile</h2>
-{% if message %}
-<div class="alert alert-success">{{ message }}</div>
-{% endif %}
-<section class="impact-dashboard" aria-labelledby="impact-dashboard-title">
-  <h3 id="impact-dashboard-title">Your environmental impact</h3>
-  <dl class="impact-metrics">
-    <div><dt>Impact score</dt><dd>{{ impact_score.total_score }}</dd></div>
-    <div><dt>Trees planted</dt><dd>{{ impact_score.trees_planted }}</dd></div>
-    <div><dt>Pledges made</dt><dd>{{ impact_score.pledges_made }}</dd></div>
-    <div><dt>Help offers</dt><dd>{{ impact_score.help_offered }}</dd></div>
-  </dl>
-  <div class="impact-dashboard-columns">
-    <section aria-labelledby="pledge-queue-title">
-      <h4 id="pledge-queue-title">Pledge queue</h4>
-      <ul class="impact-dashboard-list">
-        {% for pledge in pledges %}
-          <li>
-            <span>
-              {% if pledge.source_post %}<a href="{% url 'tree_detail' pledge.source_post_id %}">{% endif %}
-              {{ pledge.species|default:"A tree" }}
-              {% if pledge.source_post %}</a>{% endif %}
-              · {{ pledge.get_status_display }}
-            </span>
-            {% if pledge.status == 'pending' %}
-              <form method="post" action="{% url 'update_pledge_status' pledge.id %}">
-                {% csrf_token %}
-                <button name="status" value="planted" type="submit">Mark planted</button>
-                <button name="status" value="abandoned" type="submit">Abandon</button>
-              </form>
-            {% endif %}
-          </li>
-        {% empty %}
-          <li class="impact-dashboard-empty">Your planting pledges will appear here.</li>
-        {% endfor %}
-      </ul>
-    </section>
-    <section aria-labelledby="notification-title">
-      <h4 id="notification-title">Recent notifications</h4>
-      <ul class="impact-dashboard-list">
-        {% for notification in notifications %}
-          <li>
-            <span><strong>{{ notification.actor.username }}</strong> pledged after seeing <a href="{% url 'tree_detail' notification.tree_id %}">{{ notification.tree.name }}</a>.</span>
-            <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'M j, Y H:i' }}</time>
-          </li>
-        {% empty %}
-          <li class="impact-dashboard-empty">Pledge notifications will appear here.</li>
-        {% endfor %}
-      </ul>
-    </section>
-  </div>
-</section>
-<div class="row">
-  <div class="col-md-6">
-    <form method="POST" enctype="multipart/form-data">
+<main class="settings-page">
+  <header class="settings-heading">
+    <p class="eyebrow">Your Canopy</p>
+    <h1>Settings</h1>
+    <p>Manage your profile, account details, and security in one place.</p>
+  </header>
+  <nav class="settings-nav" aria-label="Settings sections">
+    <a href="{% url 'profile_settings' %}#profile-settings">Profile</a>
+    <a href="{% url 'account_settings' %}#account-settings">Account</a>
+    <a href="{% url 'privacy_settings' %}#privacy-settings">Privacy</a>
+    <a href="{% url 'security_settings' %}#security-settings">Security</a>
+    <a href="{% url 'language_settings' %}#id_language">Language</a>
+    <a href="{% url 'notification_settings' %}">Notifications</a>
+  </nav>
+
+  {% if message %}
+    <p class="settings-message" role="status">{{ message }}</p>
+  {% endif %}
+
+  <section class="settings-card" id="profile-settings" aria-labelledby="profile-settings-title">
+    <div class="settings-card-heading">
+      <div><p class="eyebrow">Let people know you</p><h2 id="profile-settings-title">Your profile</h2></div>
+      {% if profile.profile_picture %}<img class="settings-avatar" src="{{ profile.profile_picture.url }}" alt="Current profile picture">{% else %}<span class="settings-avatar settings-avatar-fallback" aria-hidden="true">{{ user.username|first|upper }}</span>{% endif %}
+    </div>
+    <form method="post" enctype="multipart/form-data" class="settings-form">
       {% csrf_token %}
-      {{ user_form.as_p }}
-      {{ profile_form.as_p }}
-      {% if profile.account_type == "personal" %}
-        <p><a class="secondary-action" href="{% url 'grove:workspace' %}">Create or join a Grove business workspace</a></p>
-      {% endif %}
-      <div class="mb-3">
-        {% if profile.profile_picture %}
-          <img src="{{ profile.profile_picture.url }}" class="img-thumbnail mb-2" style="max-width: 120px;">
-        {% else %}
-          <img src="https://ui-avatars.com/api/?name={{ user.username }}" class="img-thumbnail mb-2" style="max-width: 120px;">
-        {% endif %}
+      <div class="settings-field-group" id="account-settings">
+        <h3>Account details</h3>
+        {{ user_form.as_p }}
       </div>
-      <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
+      <div class="settings-field-group">
+        <h3>About you</h3>
+        {{ profile_form.as_p }}
+      </div>
+      {% if profile.account_type == "personal" %}
+        <p><a class="settings-secondary-link" href="{% url 'grove:workspace' %}">Create or join a Grove business workspace</a></p>
+      {% endif %}
+      <button type="submit" name="update_profile" class="settings-primary-button">Save profile</button>
     </form>
-  </div>
-  <div class="col-md-6">
-    <form method="POST">
+  </section>
+
+  <section class="settings-card" id="privacy-settings" aria-labelledby="privacy-settings-title">
+    <p class="eyebrow">Visibility</p>
+    <h2 id="privacy-settings-title">Privacy</h2>
+    <p>Your profile and published tree stories are visible to the Canopy community. Avoid adding private contact details to your public bio. You can review your public profile before sharing it.</p>
+    <a class="settings-secondary-link" href="{% url 'user_profile' user.username %}">View your public profile</a>
+  </section>
+
+  <section class="settings-card" id="security-settings" aria-labelledby="security-settings-title">
+    <p class="eyebrow">Keep your account safe</p>
+    <h2 id="security-settings-title">Change password</h2>
+    <form method="post" class="settings-form">
       {% csrf_token %}
-      <h5>Change Password</h5>
       {{ password_form.as_p }}
-      <button type="submit" name="change_password" class="btn btn-warning">Change Password</button>
+      <button type="submit" name="change_password" class="settings-primary-button">Update password</button>
     </form>
-  </div>
-</div>
+  </section>
+
+  <section class="impact-dashboard" aria-labelledby="impact-dashboard-title">
+    <p class="eyebrow">Your contribution</p>
+    <h2 id="impact-dashboard-title">Environmental impact</h2>
+    <dl class="impact-metrics">
+      <div><dt>Impact score</dt><dd>{{ impact_score.total_score }}</dd></div>
+      <div><dt>Trees planted</dt><dd>{{ impact_score.trees_planted }}</dd></div>
+      <div><dt>Pledges made</dt><dd>{{ impact_score.pledges_made }}</dd></div>
+      <div><dt>Help offers</dt><dd>{{ impact_score.help_offered }}</dd></div>
+    </dl>
+    <div class="impact-dashboard-columns">
+      <section aria-labelledby="pledge-queue-title">
+        <h3 id="pledge-queue-title">Pledge queue</h3>
+        <ul class="impact-dashboard-list">
+          {% for pledge in pledges %}
+            <li>
+              <span>
+                {% if pledge.source_post %}<a href="{% url 'tree_detail' pledge.source_post_id %}">{% endif %}
+                {{ pledge.species|default:"A tree" }}
+                {% if pledge.source_post %}</a>{% endif %}
+                · {{ pledge.get_status_display }}
+              </span>
+              {% if pledge.status == 'pending' %}
+                <form method="post" action="{% url 'update_pledge_status' pledge.id %}">
+                  {% csrf_token %}
+                  <button name="status" value="planted" type="submit">Mark planted</button>
+                  <button name="status" value="abandoned" type="submit">Abandon</button>
+                </form>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="impact-dashboard-empty">Your planting pledges will appear here.</li>
+          {% endfor %}
+        </ul>
+      </section>
+      <section aria-labelledby="notification-title">
+        <h3 id="notification-title">Recent notifications</h3>
+        <ul class="impact-dashboard-list">
+          {% for notification in notifications %}
+            <li>
+              <span><strong>{{ notification.actor.username }}</strong>
+                {% if notification.tree %}
+                  pledged after seeing <a href="{% url 'tree_detail' notification.tree_id %}">{{ notification.tree.name }}</a>.
+                {% else %}
+                  started following you.
+                {% endif %}
+              </span>
+              <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'M j, Y H:i' }}</time>
+            </li>
+          {% empty %}
+            <li class="impact-dashboard-empty">Pledge notifications will appear here.</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </section>
+</main>
 {% endblock %}

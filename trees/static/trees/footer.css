@@ -482,7 +482,7 @@
 }
 
 .canopy-footer-art {
-    height: 7.5rem;
+    height: 8.5rem;
     overflow: hidden;
     background: #052e16;
 }
@@ -492,6 +492,16 @@
     width: 100%;
     height: 100%;
 }
+
+.footer-firefly {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: canopy-firefly-drift 4s ease-in-out infinite alternate;
+}
+
+.footer-firefly--two { animation-delay: -1.2s; }
+.footer-firefly--three { animation-delay: -2.4s; }
+.footer-firefly--four { animation-delay: -3.1s; }
 
 .footer-confirmation {
     width: min(100% - 2rem, 40rem);
@@ -627,7 +637,7 @@
     }
 
     .canopy-footer-art {
-        height: 5rem;
+        height: 6rem;
     }
 }
 
@@ -654,6 +664,11 @@
 @keyframes canopy-footer-accordion {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes canopy-firefly-drift {
+    from { opacity: .35; transform: translate3d(0, 2px, 0); }
+    to { opacity: 1; transform: translate3d(3px, -5px, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {

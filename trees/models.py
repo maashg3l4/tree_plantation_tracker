@@ -47,6 +47,15 @@ class Tree(models.Model):
     is_dead = models.BooleanField(default=False)
     death_reason = models.TextField(blank=True, null=True)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["publication_status", "moderation_status", "-published_at"],
+                name="tree_public_feed_idx",
+            ),
+            models.Index(fields=["user", "-published_at"], name="tree_user_published_idx"),
+        ]
+
     def __str__(self):
         return f"{self.name} ({self.species})"
 
@@ -81,6 +90,11 @@ class HealthLog(models.Model):
     notes = models.TextField(blank=True)
     is_dead = models.BooleanField(default=False)
     death_reason = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["tree", "-date", "-id"], name="tree_healthlog_recent_idx"),
+        ]
 
     def __str__(self):
         return f"Health on {self.date} - {self.tree.name}"
@@ -118,6 +132,14 @@ class Comment(models.Model):
         db_index=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["tree", "moderation_status", "created_at"],
+                name="tree_comment_feed_idx",
+            ),
+        ]
 
 
 class Reaction(models.Model):
@@ -237,6 +259,14 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["user", "is_read", "-created_at"],
+                name="notification_user_read_idx",
+            ),
+        ]
+
 
 class TreeHealthAnalysis(models.Model):
     post = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name='health_analyses')
@@ -322,6 +352,9 @@ class UserFollow(models.Model):
             ),
         ]
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['following', '-created_at'], name='follow_following_recent_idx'),
+        ]
 
 
 class Achievement(models.Model):

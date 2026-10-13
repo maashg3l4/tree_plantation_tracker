@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db import DatabaseError
@@ -269,14 +270,32 @@ def user_logout(request):
 
 
 @login_required
-@require_POST
+@require_http_methods(["GET", "POST"])
 def change_password(request):
+    if request.method == "GET":
+        return redirect("profile")
     form = DjangoPasswordChangeForm(request.user, request.POST)
     if form.is_valid():
         user = form.save()
         update_session_auth_hash(request, user)
         return JsonResponse({"success": True, "message": "Password updated."})
     return JsonResponse({"success": False, "errors": form.errors}, status=400)
+
+
+def error_400(request, exception=None):
+    return render(request, "errors/page.html", {"error_code": 400}, status=400)
+
+
+def error_403(request, exception=None):
+    return render(request, "errors/page.html", {"error_code": 403}, status=403)
+
+
+def error_404(request, exception=None):
+    return render(request, "errors/page.html", {"error_code": 404}, status=404)
+
+
+def error_500(request):
+    return render(request, "errors/page.html", {"error_code": 500}, status=500)
 
 
 def user_profile(request, username):
@@ -299,16 +318,20 @@ def user_profile(request, username):
     is_following = request.user.is_authenticated and UserFollow.objects.filter(
         follower=request.user, following=profile_user
     ).exists()
+    post_count = posts.count()
     context = {
         "profile_user": profile_user,
         "profile": profile,
+        "cover_pattern": int(
+            hashlib.sha256(str(profile_user.pk).encode()).hexdigest()[:8], 16
+        ) % 12 + 1,
         "posts": posts,
         "tab": tab if tab in {"posts", "garden", "about"} else "posts",
         "is_following": is_following,
-        "post_count": posts.count(),
+        "post_count": post_count,
         "follower_count": profile_user.follower_relationships.count(),
         "following_count": profile_user.following_relationships.count(),
-        "tree_count": posts.count(),
+        "tree_count": post_count,
         "species_count": posts.exclude(species="").values("species").distinct().count(),
         "streak": UserStreak.objects.filter(user=profile_user).first(),
         "badges": UserAchievement.objects.filter(
@@ -677,7 +700,9 @@ def tree_list(request):
                 output_field=IntegerField(),
             )
         )
-    ).order_by('-inspiration_boost', '-updated_at')
+    ).order_by('-inspiration_boost', '-updated_at', '-pk')
+    page_obj = Paginator(trees, 12).get_page(request.GET.get("page"))
+    trees = page_obj.object_list
     for tree in trees:
         profile = getattr(tree.user, 'profile', None)
         tree.profile_picture = profile.profile_picture if profile else None
@@ -715,6 +740,8 @@ def tree_list(request):
             tree.feed_status = 'unknown'
     response = render(request, 'trees/tree_list.html', {
         'trees': trees,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
         'impact_reaction_types': Reaction.REACTION_TYPES,
     })
     if not request.user.is_authenticated:

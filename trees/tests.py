@@ -37,6 +37,73 @@ from .models import (
 )
 
 
+class ProfileSettingsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='settings-user',
+            email='settings@example.com',
+            password='test-password',
+        )
+        self.client.force_login(self.user)
+
+    def test_settings_sections_render_existing_account_and_notification_pages(self):
+        for path in (
+            '/settings/',
+            '/settings/profile/',
+            '/settings/account/',
+            '/settings/language/',
+            '/settings/privacy/',
+            '/settings/security/',
+            '/settings/notifications/',
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+
+    def test_settings_password_link_get_redirects_to_profile_settings(self):
+        response = self.client.get('/settings/password/')
+        self.assertRedirects(response, '/profile/')
+
+    def test_settings_forms_render_canopy_field_classes(self):
+        response = self.client.get('/settings/')
+        self.assertContains(response, 'class="settings-field"')
+        self.assertContains(response, 'id="security-settings"')
+
+    def test_tree_feed_is_paginated_with_stable_page_size(self):
+        for number in range(13):
+            Tree.objects.create(
+                user=self.user,
+                name=f'Tree {number}',
+                date_planted=date(2025, 1, 1),
+            )
+
+        response = self.client.get('/community/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['page_obj'].paginator.per_page, 12)
+        self.assertEqual(len(response.context['trees']), 12)
+        self.assertContains(response, 'Older stories')
+
+        next_page = self.client.get('/community/?page=2')
+        self.assertEqual(next_page.status_code, 200)
+        self.assertEqual(len(next_page.context['trees']), 1)
+        self.assertContains(next_page, 'Newer stories')
+
+    def test_public_profile_uses_a_stable_illustrated_cover_pattern(self):
+        first = self.client.get('/u/settings-user/')
+        second = self.client.get('/u/settings-user/')
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.context['cover_pattern'], second.context['cover_pattern'])
+        self.assertContains(first, f"profile-cover-art--{first.context['cover_pattern']}")
+
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=['testserver'])
+    def test_not_found_page_uses_branded_error_template(self):
+        response = self.client.get('/page-that-does-not-exist/')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'Looks like this page wandered off.', status_code=404)
+
+
 class ImpactReactionTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(username='tree-owner', password='test-password')
