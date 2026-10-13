@@ -1,17 +1,11 @@
 {
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
+      "source": "/(.*)",
+      "destination": "/api/index"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
-  ],
-  "buildCommand": "python manage.py collectstatic --noinput",
+  "buildCommand": "python scripts/collectstatic_for_vercel.py",
   "crons": [
     {
       "path": "/api/cron/daily-engagement/",

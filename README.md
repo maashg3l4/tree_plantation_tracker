@@ -118,7 +118,7 @@ upgrade a plan if you do not accept that risk.
    object-storage bucket. Do not use the local `db.sqlite3` as production data;
    local accounts, posts, and uploads are not automatically published.
 2. Import this GitHub repository into Vercel and set its Production Branch to
-   `maashg3l4-impact-reaction-phase-1`. Keep Preview deployments disabled until
+   `main`. Keep Preview deployments disabled until
    a separate preview database and storage bucket are configured.
 3. Add production-only environment variables in Vercel Project Settings. Never
    commit them, paste them into chat, or use the example values as credentials:
@@ -139,7 +139,9 @@ upgrade a plan if you do not accept that risk.
    `CSRF_TRUSTED_ORIGINS` with your exact `https://` site origin if you add a
    custom domain. Do not enable a paid provider feature solely to follow this
    guide.
-4. Deploy the connected branch from Vercel. For an empty database, temporarily
+4. Each Vercel build runs `collectstatic` so the shared navigation, footer, and
+   other static assets are included in the deployment. Deploy the connected
+   branch from Vercel. For an empty database, temporarily
    add the Production environment variable `VERCEL_RUN_MIGRATIONS=true` and
    redeploy. The first function startup applies Django migrations before
    serving the request. Remove this variable and redeploy after the first
