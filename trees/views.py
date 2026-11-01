@@ -5,6 +5,7 @@ import logging
 import re
 import uuid
 from datetime import timedelta
+from urllib.parse import urlsplit
 
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
@@ -1059,36 +1060,69 @@ def profile_view(request, section="profile"):
             profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
             profile_form.fields.pop("language")
             if profile_form.is_valid():
-                try:
-                    profile_form.save()
-                except (BotoCoreError, ClientError) as error:
-                    error_response = (
-                        error.response if isinstance(error, ClientError) else {}
-                    )
-                    error_code = error_response.get("Error", {}).get(
-                        "Code", type(error).__name__
-                    )
-                    error_message = error_response.get("Error", {}).get(
-                        "Message", "No provider message"
-                    )
-                    response_metadata = error_response.get(
-                        "ResponseMetadata", {}
-                    )
-                    status_code = response_metadata.get("HTTPStatusCode", "unknown")
-                    request_id = response_metadata.get("RequestId", "unknown")
-                    logger.error(
-                        "Profile media storage failed "
-                        "(provider_code=%s http_status=%s request_id=%s "
-                        "provider_message=%s).",
-                        error_code,
-                        status_code,
-                        request_id,
-                        error_message,
-                    )
+                pending_uploads = [
+                    (field_name, profile_form.cleaned_data[field_name])
+                    for field_name in ("profile_picture", "cover_image")
+                    if profile_form.cleaned_data.get(field_name)
+                ]
+                profile_fields = ("bio", "location", "website", "account_type")
+                for field_name in profile_fields:
+                    setattr(profile, field_name, profile_form.cleaned_data[field_name])
+                profile.save(update_fields=profile_fields)
+
+                failed_uploads = []
+                for field_name, upload in pending_uploads:
+                    try:
+                        getattr(profile, field_name).save(
+                            upload.name, upload, save=False
+                        )
+                        profile.save(update_fields=[field_name])
+                    except (BotoCoreError, ClientError) as error:
+                        failed_uploads.append(field_name)
+                        error_response = (
+                            error.response if isinstance(error, ClientError) else {}
+                        )
+                        error_code = error_response.get("Error", {}).get(
+                            "Code", type(error).__name__
+                        )
+                        error_message = error_response.get("Error", {}).get(
+                            "Message", "No provider message"
+                        )
+                        response_metadata = error_response.get(
+                            "ResponseMetadata", {}
+                        )
+                        status_code = response_metadata.get(
+                            "HTTPStatusCode", "unknown"
+                        )
+                        request_id = response_metadata.get("RequestId", "unknown")
+                        storage_endpoint = urlsplit(
+                            getattr(settings, "AWS_S3_ENDPOINT_URL", "")
+                        )
+                        storage_options = settings.STORAGES["default"].get(
+                            "OPTIONS", {}
+                        )
+                        logger.error(
+                            "Profile media storage failed "
+                            "(provider_code=%s http_status=%s request_id=%s "
+                            "provider_message=%s endpoint_host=%s endpoint_path=%s "
+                            "region=%s bucket=%s field=%s).",
+                            error_code,
+                            status_code,
+                            request_id,
+                            error_message,
+                            storage_endpoint.hostname or "unknown",
+                            storage_endpoint.path or "/",
+                            storage_options.get("region_name", "unknown"),
+                            storage_options.get("bucket_name", "unknown"),
+                            field_name,
+                        )
+
+                if failed_uploads:
+                    profile.refresh_from_db()
                     profile_form.add_error(
                         None,
-                        "We couldn't upload your image right now. Please try again "
-                        "in a moment. Your profile changes were not saved.",
+                        "Your profile details were saved, but we couldn't upload "
+                        "your image. Please try again or choose a smaller image.",
                     )
                 else:
                     message = 'Profile updated successfully.'

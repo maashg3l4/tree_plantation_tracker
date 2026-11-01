@@ -207,11 +207,15 @@ if os.environ.get("AWS_STORAGE_BUCKET_NAME"):
         raise RuntimeError(
             "S3-compatible media storage requires bucket, endpoint, access key, and secret key."
         )
+    from trees.storage import use_supabase_direct_storage_endpoint
+
     STORAGES["default"] = {
         "BACKEND": "trees.storage.UniqueUploadS3Storage",
         "OPTIONS": {
             "bucket_name": os.environ["AWS_STORAGE_BUCKET_NAME"],
-            "endpoint_url": os.environ["AWS_S3_ENDPOINT_URL"],
+            "endpoint_url": use_supabase_direct_storage_endpoint(
+                os.environ["AWS_S3_ENDPOINT_URL"]
+            ),
             "region_name": os.environ.get("AWS_S3_REGION_NAME", "auto"),
             "access_key": os.environ["AWS_ACCESS_KEY_ID"],
             "secret_key": os.environ["AWS_SECRET_ACCESS_KEY"],

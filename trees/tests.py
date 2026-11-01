@@ -39,7 +39,10 @@ from .models import (
     UserImpactScore,
     UserStreak,
 )
-from .storage import UniqueUploadS3Storage
+from .storage import (
+    UniqueUploadS3Storage,
+    use_supabase_direct_storage_endpoint,
+)
 
 
 class StyledWidgetFixture(StyledFormMixin, forms.Form):
@@ -181,8 +184,21 @@ class ProfileSettingsTests(TestCase):
         self.assertRegex(second_name, r'^profile_pics/[0-9a-f]{32}\.png$')
         self.assertNotIn('ACL', write_parameters)
 
+    def test_supabase_endpoint_uses_direct_storage_hostname(self):
+        self.assertEqual(
+            use_supabase_direct_storage_endpoint(
+                'https://project-ref.supabase.co/storage/v1/s3'
+            ),
+            'https://project-ref.storage.supabase.co/storage/v1/s3',
+        )
+        direct_endpoint = 'https://project-ref.storage.supabase.co/storage/v1/s3'
+        self.assertEqual(
+            use_supabase_direct_storage_endpoint(direct_endpoint),
+            direct_endpoint,
+        )
+
     @patch(
-        'trees.views.ProfileForm.save',
+        'django.db.models.fields.files.FieldFile.save',
         side_effect=ClientError(
             {
                 "Error": {
@@ -198,6 +214,8 @@ class ProfileSettingsTests(TestCase):
         ),
     )
     def test_profile_storage_failure_renders_actionable_error_instead_of_500(self, _save):
+        image_buffer = BytesIO()
+        Image.new('RGB', (2, 2), color='green').save(image_buffer, format='PNG')
         with self.assertLogs('trees.views', level='ERROR') as captured_logs:
             response = self.client.post(
                 '/settings/profile/',
@@ -206,16 +224,24 @@ class ProfileSettingsTests(TestCase):
                     'location': 'Dhaka',
                     'website': 'https://example.com',
                     'account_type': 'personal',
+                    'profile_picture': SimpleUploadedFile(
+                        'profile.png',
+                        image_buffer.getvalue(),
+                        content_type='image/png',
+                    ),
                 },
             )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "upload your image right now")
+        self.assertContains(response, "Your profile details were saved")
         self.assertIn('http_status=540', captured_logs.output[0])
         self.assertIn('test-request-id', captured_logs.output[0])
         self.assertIn('Storage rejected the upload.', captured_logs.output[0])
         self.user.profile.refresh_from_db()
-        self.assertEqual(self.user.profile.bio, '')
+        self.assertEqual(
+            self.user.profile.bio,
+            'This should not be reported as saved.',
+        )
 
     def test_settings_password_link_get_redirects_to_profile_settings(self):
         response = self.client.get('/settings/password/')

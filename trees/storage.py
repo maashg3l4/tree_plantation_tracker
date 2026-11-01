@@ -1,8 +1,35 @@
 import posixpath
 from uuid import uuid4
+from urllib.parse import urlsplit, urlunsplit
 
 from django.core.exceptions import SuspiciousFileOperation
 from storages.backends.s3 import S3Storage
+
+
+def use_supabase_direct_storage_endpoint(endpoint_url):
+    endpoint = urlsplit(endpoint_url)
+    hostname = endpoint.hostname
+    if not hostname or not hostname.endswith(".supabase.co"):
+        return endpoint_url
+    if hostname.endswith(".storage.supabase.co"):
+        return endpoint_url
+
+    project_ref = hostname.removesuffix(".supabase.co")
+    if not project_ref or "." in project_ref:
+        return endpoint_url
+
+    direct_hostname = f"{project_ref}.storage.supabase.co"
+    if endpoint.port:
+        direct_hostname = f"{direct_hostname}:{endpoint.port}"
+    return urlunsplit(
+        (
+            endpoint.scheme,
+            direct_hostname,
+            endpoint.path,
+            endpoint.query,
+            endpoint.fragment,
+        )
+    )
 
 
 class UniqueUploadS3Storage(S3Storage):

@@ -131,8 +131,8 @@ upgrade a plan if you do not accept that risk.
    | `AWS_STORAGE_BUCKET_NAME` | Private media bucket name |
    | `AWS_ACCESS_KEY_ID` | Bucket access key |
    | `AWS_SECRET_ACCESS_KEY` | Bucket secret key |
-   | `AWS_S3_ENDPOINT_URL` | Provider's S3-compatible endpoint |
-   | `AWS_S3_REGION_NAME` | Provider's region; `auto` for Cloudflare R2 |
+   | `AWS_S3_ENDPOINT_URL` | Supabase S3 endpoint from Storage settings; the app uses Supabase's direct storage hostname |
+   | `AWS_S3_REGION_NAME` | Exact project region shown in Supabase's S3 configuration |
    | `CRON_SECRET` | Separate, randomly generated secret |
 
    `GEMINI_API_KEY` and `PLANTNET_API_KEY` are optional. Add
