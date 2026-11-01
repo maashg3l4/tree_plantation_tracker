@@ -12,6 +12,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
+from botocore.exceptions import BotoCoreError
 
 from .ai_services import AIServiceError, identify_species
 from .daily_jobs import publish_scheduled_posts
@@ -168,14 +169,34 @@ class ProfileSettingsTests(TestCase):
         storage = UniqueUploadS3Storage(
             bucket_name='test-bucket',
             file_overwrite=True,
+            default_acl=None,
         )
 
         first_name = storage.get_available_name('profile_pics/avatar.png')
         second_name = storage.get_available_name('profile_pics/avatar.png')
+        write_parameters = storage._get_write_parameters('profile_pics/avatar.png')
 
         self.assertNotEqual(first_name, second_name)
         self.assertRegex(first_name, r'^profile_pics/[0-9a-f]{32}\.png$')
         self.assertRegex(second_name, r'^profile_pics/[0-9a-f]{32}\.png$')
+        self.assertNotIn('ACL', write_parameters)
+
+    @patch('trees.views.ProfileForm.save', side_effect=BotoCoreError())
+    def test_profile_storage_failure_renders_actionable_error_instead_of_500(self, _save):
+        response = self.client.post(
+            '/settings/profile/',
+            {
+                'bio': 'This should not be reported as saved.',
+                'location': 'Dhaka',
+                'website': 'https://example.com',
+                'account_type': 'personal',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "upload your image right now")
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.bio, '')
 
     def test_settings_password_link_get_redirects_to_profile_settings(self):
         response = self.client.get('/settings/password/')

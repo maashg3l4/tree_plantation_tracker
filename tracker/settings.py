@@ -215,7 +215,8 @@ if os.environ.get("AWS_STORAGE_BUCKET_NAME"):
             "region_name": os.environ.get("AWS_S3_REGION_NAME", "auto"),
             "access_key": os.environ["AWS_ACCESS_KEY_ID"],
             "secret_key": os.environ["AWS_SECRET_ACCESS_KEY"],
-            "default_acl": "private",
+            # Supabase Storage controls privacy at the bucket level and rejects S3 ACL headers.
+            "default_acl": None,
             "querystring_auth": True,
             "file_overwrite": True,
             "addressing_style": "path",

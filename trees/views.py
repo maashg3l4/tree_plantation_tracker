@@ -1,10 +1,12 @@
 import json
 import hashlib
 import hmac
+import logging
 import re
 import uuid
 from datetime import timedelta
 
+from botocore.exceptions import BotoCoreError
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.core.paginator import Paginator
@@ -58,6 +60,9 @@ from .impact import refresh_user_impact_score
 from .ai_services import AIServiceError, analyze_tree_health, identify_species, image_digest
 from .gamification import record_activity, update_achievement_progress
 from ops.forms import ReportForm
+
+
+logger = logging.getLogger(__name__)
 
 
 @require_POST
@@ -1054,8 +1059,24 @@ def profile_view(request, section="profile"):
             profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
             profile_form.fields.pop("language")
             if profile_form.is_valid():
-                profile_form.save()
-                message = 'Profile updated successfully.'
+                try:
+                    profile_form.save()
+                except BotoCoreError as error:
+                    error_response = getattr(error, "response", None) or {}
+                    error_code = error_response.get("Error", {}).get(
+                        "Code", type(error).__name__
+                    )
+                    logger.error(
+                        "Profile media storage failed (provider code: %s).",
+                        error_code,
+                    )
+                    profile_form.add_error(
+                        None,
+                        "We couldn't upload your image right now. Please try again "
+                        "in a moment. Your profile changes were not saved.",
+                    )
+                else:
+                    message = 'Profile updated successfully.'
         elif section == "account":
             previous_username = request.user.username
             user_form = UserForm(request.POST, instance=request.user, profile=profile)
