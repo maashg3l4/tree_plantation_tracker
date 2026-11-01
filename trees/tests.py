@@ -197,6 +197,22 @@ class ProfileSettingsTests(TestCase):
             direct_endpoint,
         )
 
+    @override_settings(
+        STORAGES={
+            "default": {
+                "OPTIONS": {
+                    "endpoint_url": (
+                        "https://project-ref.storage.supabase.co/storage/v1/s3"
+                    ),
+                    "region_name": "ap-northeast-1",
+                    "bucket_name": "test-bucket",
+                }
+            },
+            "staticfiles": {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+            },
+        }
+    )
     @patch(
         'django.db.models.fields.files.FieldFile.save',
         side_effect=ClientError(
@@ -233,10 +249,14 @@ class ProfileSettingsTests(TestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Your profile details were saved")
+        self.assertContains(response, "Supabase rejected the image upload")
         self.assertIn('http_status=540', captured_logs.output[0])
         self.assertIn('test-request-id', captured_logs.output[0])
         self.assertIn('Storage rejected the upload.', captured_logs.output[0])
+        self.assertIn(
+            'endpoint_host=project-ref.storage.supabase.co',
+            captured_logs.output[0],
+        )
         self.user.profile.refresh_from_db()
         self.assertEqual(
             self.user.profile.bio,

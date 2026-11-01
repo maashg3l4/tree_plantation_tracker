@@ -1095,25 +1095,26 @@ def profile_view(request, section="profile"):
                             "HTTPStatusCode", "unknown"
                         )
                         request_id = response_metadata.get("RequestId", "unknown")
-                        storage_endpoint = urlsplit(
-                            getattr(settings, "AWS_S3_ENDPOINT_URL", "")
-                        )
                         storage_options = settings.STORAGES["default"].get(
                             "OPTIONS", {}
+                        )
+                        storage_endpoint = urlsplit(
+                            storage_options.get("endpoint_url", "")
                         )
                         logger.error(
                             "Profile media storage failed "
                             "(provider_code=%s http_status=%s request_id=%s "
                             "provider_message=%s endpoint_host=%s endpoint_path=%s "
-                            "region=%s bucket=%s field=%s).",
+                            "region=%s bucket=%s operation=%s field=%s).",
                             error_code,
                             status_code,
                             request_id,
-                            error_message,
+                            error_message or "empty",
                             storage_endpoint.hostname or "unknown",
                             storage_endpoint.path or "/",
                             storage_options.get("region_name", "unknown"),
                             storage_options.get("bucket_name", "unknown"),
+                            getattr(error, "operation_name", "unknown"),
                             field_name,
                         )
 
@@ -1121,8 +1122,8 @@ def profile_view(request, section="profile"):
                     profile.refresh_from_db()
                     profile_form.add_error(
                         None,
-                        "Your profile details were saved, but we couldn't upload "
-                        "your image. Please try again or choose a smaller image.",
+                        "Your profile details were saved, but Supabase rejected the "
+                        "image upload. Please try again later.",
                     )
                 else:
                     message = 'Profile updated successfully.'
