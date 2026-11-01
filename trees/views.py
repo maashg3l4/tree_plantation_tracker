@@ -6,7 +6,7 @@ import re
 import uuid
 from datetime import timedelta
 
-from botocore.exceptions import BotoCoreError
+from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.core.paginator import Paginator
@@ -1061,14 +1061,29 @@ def profile_view(request, section="profile"):
             if profile_form.is_valid():
                 try:
                     profile_form.save()
-                except BotoCoreError as error:
-                    error_response = getattr(error, "response", None) or {}
+                except (BotoCoreError, ClientError) as error:
+                    error_response = (
+                        error.response if isinstance(error, ClientError) else {}
+                    )
                     error_code = error_response.get("Error", {}).get(
                         "Code", type(error).__name__
                     )
+                    error_message = error_response.get("Error", {}).get(
+                        "Message", "No provider message"
+                    )
+                    response_metadata = error_response.get(
+                        "ResponseMetadata", {}
+                    )
+                    status_code = response_metadata.get("HTTPStatusCode", "unknown")
+                    request_id = response_metadata.get("RequestId", "unknown")
                     logger.error(
-                        "Profile media storage failed (provider code: %s).",
+                        "Profile media storage failed "
+                        "(provider_code=%s http_status=%s request_id=%s "
+                        "provider_message=%s).",
                         error_code,
+                        status_code,
+                        request_id,
+                        error_message,
                     )
                     profile_form.add_error(
                         None,
