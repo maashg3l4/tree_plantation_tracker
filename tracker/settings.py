@@ -208,7 +208,7 @@ if os.environ.get("AWS_STORAGE_BUCKET_NAME"):
             "S3-compatible media storage requires bucket, endpoint, access key, and secret key."
         )
     STORAGES["default"] = {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": "trees.storage.UniqueUploadS3Storage",
         "OPTIONS": {
             "bucket_name": os.environ["AWS_STORAGE_BUCKET_NAME"],
             "endpoint_url": os.environ["AWS_S3_ENDPOINT_URL"],
@@ -217,9 +217,9 @@ if os.environ.get("AWS_STORAGE_BUCKET_NAME"):
             "secret_key": os.environ["AWS_SECRET_ACCESS_KEY"],
             "default_acl": "private",
             "querystring_auth": True,
-            "file_overwrite": False,
+            "file_overwrite": True,
             "addressing_style": "path",
-            },
+        },
     }
 
 PLANTNET_API_KEY = os.environ.get("PLANTNET_API_KEY", "")

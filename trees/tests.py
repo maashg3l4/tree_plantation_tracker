@@ -38,6 +38,7 @@ from .models import (
     UserImpactScore,
     UserStreak,
 )
+from .storage import UniqueUploadS3Storage
 
 
 class StyledWidgetFixture(StyledFormMixin, forms.Form):
@@ -162,6 +163,19 @@ class ProfileSettingsTests(TestCase):
                 )
                 self.assertTrue(self.user.profile.profile_picture.name)
                 self.assertTrue(self.user.profile.cover_image.name)
+
+    def test_s3_upload_storage_generates_unique_names_without_head_checks(self):
+        storage = UniqueUploadS3Storage(
+            bucket_name='test-bucket',
+            file_overwrite=True,
+        )
+
+        first_name = storage.get_available_name('profile_pics/avatar.png')
+        second_name = storage.get_available_name('profile_pics/avatar.png')
+
+        self.assertNotEqual(first_name, second_name)
+        self.assertRegex(first_name, r'^profile_pics/[0-9a-f]{32}\.png$')
+        self.assertRegex(second_name, r'^profile_pics/[0-9a-f]{32}\.png$')
 
     def test_settings_password_link_get_redirects_to_profile_settings(self):
         response = self.client.get('/settings/password/')
