@@ -6,8 +6,10 @@ from django.utils import timezone
 from datetime import timedelta
 
 from .models import Profile
+from .form_styling import StyledFormMixin
 
-class ProfileForm(forms.ModelForm):
+
+class ProfileForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Profile
         fields = [
@@ -29,15 +31,17 @@ class ProfileForm(forms.ModelForm):
             'language': forms.Select(attrs={'class': 'settings-field'}),
         }
 
-class UserForm(forms.ModelForm):
+class UserForm(StyledFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.profile = kwargs.pop('profile', None)
         super().__init__(*args, **kwargs)
 
     class Meta:
         model = User
-        fields = ['username', 'email']
+        fields = ['first_name', 'last_name', 'username', 'email']
         widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'settings-field', 'autocomplete': 'given-name'}),
+            'last_name': forms.TextInput(attrs={'class': 'settings-field', 'autocomplete': 'family-name'}),
             'username': forms.TextInput(attrs={'class': 'settings-field', 'autocomplete': 'username'}),
             'email': forms.EmailInput(attrs={'class': 'settings-field', 'autocomplete': 'email'}),
         }
@@ -58,7 +62,7 @@ class UserForm(forms.ModelForm):
                 )
         return username
 
-class PasswordChangeForm(forms.Form):
+class PasswordChangeForm(StyledFormMixin, forms.Form):
     old_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'settings-field', 'autocomplete': 'current-password'}),
         required=True,

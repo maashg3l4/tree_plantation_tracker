@@ -1,178 +1,186 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Add Tree{% endblock %}
+{% block title %}Share a tree · Canopy{% endblock %}
 {% block content %}
+<main class="tree-compose">
+    <a class="tree-compose-back" href="{% url 'tree_list' %}"><span aria-hidden="true">←</span> Back to community</a>
+    <header class="tree-compose-heading">
+        <p class="eyebrow">Every tree has a story</p>
+        <h1>Share a tree</h1>
+        <p>Add a planting to your garden story. You can save a draft and finish it later.</p>
+    </header>
 
-<h2 class="mb-4 animated-text fade-in-up">Add a New Tree</h2>
-<div class="card p-4 shadow-sm">
-    <form method="POST" enctype="multipart/form-data" id="tree-form" data-identify-url="{% url 'identify_tree_species' %}">
+    <form method="post" enctype="multipart/form-data" id="tree-form" class="tree-compose-card"
+          data-identify-url="{% url 'identify_tree_species' %}">
         {% csrf_token %}
         {% if form.errors %}
-            <div class="alert alert-danger">
+            <div class="tree-form-errors" role="alert" aria-labelledby="tree-form-errors-title">
+                <strong id="tree-form-errors-title">A few details need your attention.</strong>
                 <ul>
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><a href="#id_{{ field.name }}">{{ field.label }}: {{ error }}</a></li>
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
                 </ul>
             </div>
         {% endif %}
-        <div class="mb-3">
-            {{ form.name.label_tag }}
-            {{ form.name }}
-        </div>
-        <div class="mb-3">
-            {{ form.caption.label_tag }}
-            {{ form.caption }}
-        </div>
-        <div class="mb-3">
-            {{ form.species.label_tag }}
-            {{ form.species }}
-        </div>
-        <div class="mb-3">
-            {{ form.country.label_tag }}
-            {{ form.country }}
-        </div>
-        <div class="mb-3">
-            {{ form.division.label_tag }}
-            <select id="id_division" name="division" class="form-select">
-                <option value="">Select Division</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            {{ form.district.label_tag }}
-            <select id="id_district" name="district" class="form-select">
-                <option value="">Select District</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            {{ form.other_location.label_tag }}
-            {{ form.other_location }}
-        </div>
-        <div class="mb-3">
-            <label for="map" class="form-label">Select Exact Location on Map:</label>
-            <div id="map" style="height: 300px; width: 100%; border-radius: 8px;"></div>
-            <input type="hidden" id="id_latitude" name="latitude" value="{{ form.latitude.value|default:'' }}">
-            <input type="hidden" id="id_longitude" name="longitude" value="{{ form.longitude.value|default:'' }}">
-            <input type="hidden" id="id_location" name="location" value="{{ form.location.value|default:'' }}">
-        </div>
-        <div class="mb-3">
-            {{ form.date_planted.label_tag }}
-            {{ form.date_planted }}
-        </div>
-        <div class="mb-3">
-            {{ form.image.label_tag }}
-            {{ form.image }}
-            <p class="species-analysis-status" id="species-analysis-status" aria-live="polite"></p>
-            <div class="species-results" id="species-results" hidden>
-                <p id="species-analysis-warning" class="species-analysis-warning" hidden></p>
-                <p id="species-provider-note" class="species-provider-note"></p>
-                <ol id="species-predictions" class="species-predictions"></ol>
+
+        <section class="tree-compose-section" aria-labelledby="tree-details-title">
+            <div class="tree-compose-section-heading">
+                <span aria-hidden="true">01</span>
+                <div><h2 id="tree-details-title">About your tree</h2><p>Start with a name and a few details.</p></div>
             </div>
+            <div class="tree-compose-grid">
+                <div class="tree-form-field">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    {{ form.name.errors }}
+                </div>
+                <div class="tree-form-field">
+                    {{ form.species.label_tag }}
+                    <div class="tree-species-field">{{ form.species }}<span aria-hidden="true">✳</span></div>
+                    {{ form.species.errors }}
+                </div>
+                <div class="tree-form-field tree-form-field--full">
+                    {{ form.caption.label_tag }}
+                    {{ form.caption }}
+                    {{ form.caption.errors }}
+                    <small>Tell the community why this tree matters to you.</small>
+                </div>
+                <div class="tree-form-field">
+                    {{ form.date_planted.label_tag }}
+                    {{ form.date_planted }}
+                    {{ form.date_planted.errors }}
+                </div>
+            </div>
+        </section>
+
+        <section class="tree-compose-section" aria-labelledby="tree-location-title">
+            <div class="tree-compose-section-heading">
+                <span aria-hidden="true">02</span>
+                <div><h2 id="tree-location-title">Where it grows</h2><p>Add a place so your community can follow its roots.</p></div>
+            </div>
+            <div class="tree-compose-grid">
+                <div class="tree-form-field">
+                    {{ form.country.label_tag }}
+                    {{ form.country }}
+                    {{ form.country.errors }}
+                </div>
+                <div class="tree-form-field">
+                    {{ form.division.label_tag }}
+                    <select id="id_division" name="division" class="form-select"
+                            data-selected="{{ form.division.value|default:'' }}">
+                        <option value="">Select division</option>
+                    </select>
+                    {{ form.division.errors }}
+                </div>
+                <div class="tree-form-field">
+                    {{ form.district.label_tag }}
+                    <select id="id_district" name="district" class="form-select"
+                            data-selected="{{ form.district.value|default:'' }}">
+                        <option value="">Select district</option>
+                    </select>
+                    {{ form.district.errors }}
+                </div>
+                <div class="tree-form-field">
+                    {{ form.other_location.label_tag }}
+                    {{ form.other_location }}
+                    {{ form.other_location.errors }}
+                </div>
+            </div>
+            <div class="tree-map-heading">
+                <div><strong>Pin the planting spot</strong><span>Tap the map, drag the pin, or enter coordinates below.</span></div>
+                <span class="tree-map-badge"><span aria-hidden="true">●</span> Approximate location</span>
+            </div>
+            <div class="tree-map-frame">
+                <div id="map" role="application" aria-label="Map for choosing the planting location"></div>
+            </div>
+            <p class="tree-map-status" id="tree-map-status" aria-live="polite">Move the map pin to the tree's location.</p>
+            <div class="tree-compose-grid tree-coordinate-grid">
+                <div class="tree-form-field">
+                    {{ form.latitude.label_tag }}
+                    {{ form.latitude }}
+                    {{ form.latitude.errors }}
+                </div>
+                <div class="tree-form-field">
+                    {{ form.longitude.label_tag }}
+                    {{ form.longitude }}
+                    {{ form.longitude.errors }}
+                </div>
+            </div>
+            {{ form.location.as_hidden }}
+        </section>
+
+        <section class="tree-compose-section" aria-labelledby="tree-media-title">
+            <div class="tree-compose-section-heading">
+                <span aria-hidden="true">03</span>
+                <div><h2 id="tree-media-title">Bring it to life</h2><p>A photo helps people connect with your planting.</p></div>
+            </div>
+            <div class="tree-compose-grid">
+                <div class="tree-form-field tree-form-field--full tree-upload-field">
+                    {{ form.image.label_tag }}
+                    {{ form.image }}
+                    {{ form.image.errors }}
+                    <p class="species-analysis-status" id="species-analysis-status" aria-live="polite"></p>
+                    <div class="species-results" id="species-results" hidden>
+                        <p id="species-analysis-warning" class="species-analysis-warning" hidden></p>
+                        <p id="species-provider-note" class="species-provider-note"></p>
+                        <ol id="species-predictions" class="species-predictions"></ol>
+                    </div>
+                </div>
+                <div class="tree-form-field tree-upload-field">
+                    {{ form.extra_images.label_tag }}
+                    {{ form.extra_images }}
+                    {{ form.extra_images.errors }}
+                    <small>Add up to 9 additional JPEG, PNG, or WebP photos (10 MB each).</small>
+                </div>
+                <div class="tree-form-field tree-upload-field">
+                    {{ form.video.label_tag }}
+                    {{ form.video }}
+                    {{ form.video.errors }}
+                    <small>Optional MP4 or WebM video, up to 50 MB.</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="tree-compose-section tree-publish-section" aria-labelledby="tree-publish-title">
+            <div class="tree-compose-section-heading">
+                <span aria-hidden="true">04</span>
+                <div><h2 id="tree-publish-title">Choose when to share</h2><p>Publish now, schedule for later, or keep it as a draft.</p></div>
+            </div>
+            <div class="tree-compose-grid">
+                <div class="tree-form-field">
+                    {{ form.scheduled_publish_at.label_tag }}
+                    {{ form.scheduled_publish_at }}
+                    {{ form.scheduled_publish_at.errors }}
+                    <small>Leave blank to publish now.</small>
+                </div>
+                <div class="tree-draft-option">
+                    {{ form.save_as_draft }}
+                    {{ form.save_as_draft.label_tag }}
+                    {{ form.save_as_draft.errors }}
+                </div>
+            </div>
+        </section>
+
+        <div class="tree-compose-footer">
+            <p>Your story will be shared with the Canopy community.</p>
+            <button type="submit" class="tree-submit-button" id="submit-btn"><span aria-hidden="true">✳</span> Share your tree</button>
         </div>
-        <div class="mb-3">{{ form.extra_images.label_tag }}{{ form.extra_images }}<small class="form-text">Add up to 9 additional JPEG, PNG, or WebP photos (10 MB each).</small></div>
-        <div class="mb-3">{{ form.video.label_tag }}{{ form.video }}<small class="form-text">Optional MP4 or WebM video, up to 50 MB.</small></div>
-        <div class="mb-3">{{ form.scheduled_publish_at.label_tag }}{{ form.scheduled_publish_at }}<small class="form-text">Leave blank to publish now, or schedule a future post.</small></div>
-        <div class="mb-3 form-check">{{ form.save_as_draft }}{{ form.save_as_draft.label_tag }}</div>
-        <button type="submit" class="btn btn-success fade-in-up" id="submit-btn">Share your tree</button>
     </form>
-</div>
-
-<a href="/" class="btn btn-secondary mt-3 fade-in-up">&larr; Back to Tree List</a>
+</main>
+{{ divisions|json_script:"tree-divisions-data" }}
+{{ districts|json_script:"tree-districts-data" }}
+{% endblock %}
+{% block page_styles %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+{% block page_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script src="{% static 'trees/ai-identification.js' %}" defer></script>
-
-<!-- Leaflet.js for free map integration -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/esri-leaflet-geocoder/dist/esri-leaflet-geocoder.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder/dist/esri-leaflet-geocoder.css" />
-<script>
-  // Example data for divisions and districts (should match location_data.py)
-  const DIVISIONS = {
-    'Bangladesh': ["Dhaka", "Chattogram", "Khulna", "Barisal", "Sylhet", "Rajshahi", "Rangpur", "Mymensingh"],
-    // ...add more as needed
-  };
-  const DISTRICTS = {
-    'Dhaka': ["Dhaka", "Gazipur", "Narayanganj", "Tangail", "Manikganj", "Munshiganj", "Narsingdi", "Faridpur", "Gopalganj", "Kishoreganj", "Madaripur", "Rajbari", "Shariatpur"],
-    'Chattogram': ["Chattogram", "Cox's Bazar", "Comilla", "Feni", "Brahmanbaria", "Rangamati", "Noakhali", "Chandpur", "Lakshmipur", "Khagrachari", "Bandarban"],
-    'Khulna': ["Khulna", "Bagerhat", "Satkhira", "Jessore", "Narail", "Magura", "Jhenaidah", "Kushtia", "Chuadanga", "Meherpur"],
-    'Barisal': ["Barisal", "Patuakhali", "Bhola", "Pirojpur", "Barguna", "Jhalokathi"],
-    'Sylhet': ["Sylhet", "Moulvibazar", "Habiganj", "Sunamganj"],
-    'Rajshahi': ["Rajshahi", "Bogra", "Joypurhat", "Naogaon", "Natore", "Chapai Nawabganj", "Pabna", "Sirajganj"],
-    'Rangpur': ["Rangpur", "Dinajpur", "Kurigram", "Gaibandha", "Thakurgaon", "Panchagarh", "Nilphamari", "Lalmonirhat"],
-    'Mymensingh': ["Mymensingh", "Netrokona", "Jamalpur", "Sherpur"],
-    // ...add more as needed
-  };
-  document.addEventListener('DOMContentLoaded', function() {
-    // Handle division dropdown
-    document.getElementById('id_country').addEventListener('change', function() {
-      var country = this.value;
-      var divisionSelect = document.getElementById('id_division');
-      divisionSelect.innerHTML = '<option value="">Select Division</option>';
-      if (DIVISIONS[country]) {
-        DIVISIONS[country].forEach(function(div) {
-          divisionSelect.innerHTML += `<option value="${div}">${div}</option>`;
-        });
-      }
-      document.getElementById('id_district').innerHTML = '<option value="">Select District</option>';
-    });
-    // Handle district dropdown
-    document.getElementById('id_division').addEventListener('change', function() {
-      var division = this.value;
-      var districtSelect = document.getElementById('id_district');
-      districtSelect.innerHTML = '<option value="">Select District</option>';
-      if (DISTRICTS[division]) {
-        DISTRICTS[division].forEach(function(dist) {
-          districtSelect.innerHTML += `<option value="${dist}">${dist}</option>`;
-        });
-      }
-    });
-    var defaultLat = 19.0760;
-    var defaultLng = 72.8777;
-    var map = L.map('map').setView([defaultLat, defaultLng], 10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-    var marker = L.marker([defaultLat, defaultLng], {draggable:true}).addTo(map);
-    function setLocationField(lat, lng) {
-      document.getElementById('id_latitude').value = lat;
-      document.getElementById('id_longitude').value = lng;
-      // Compose location string from dropdowns and other_location
-      var country = document.getElementById('id_country').value;
-      var division = document.getElementById('id_division').value;
-      var district = document.getElementById('id_district').value;
-      var other = document.getElementById('id_other_location').value;
-      var locParts = [];
-      if (country) locParts.push(country);
-      if (division) locParts.push(division);
-      if (district) locParts.push(district);
-      if (other) locParts.push(other);
-      document.getElementById('id_location').value = locParts.join(', ');
-    }
-    marker.on('dragend', function(e) {
-      var latlng = marker.getLatLng();
-      setLocationField(latlng.lat, latlng.lng);
-    });
-    map.on('click', function(e) {
-      marker.setLatLng(e.latlng);
-      setLocationField(e.latlng.lat, e.latlng.lng);
-    });
-    // Set initial values
-    setLocationField(defaultLat, defaultLng);
-    // Prevent submit if location is not set
-    document.getElementById('tree-form').addEventListener('submit', function(e) {
-      var loc = document.getElementById('id_location').value;
-      if (!loc) {
-        e.preventDefault();
-        alert('Please select a location and set all required fields.');
-      }
-    });
-  });
-</script>
-
+<script src="{% static 'trees/tree-compose.js' %}" defer></script>
 {% endblock %}

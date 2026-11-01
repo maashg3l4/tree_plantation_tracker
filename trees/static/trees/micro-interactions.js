@@ -8,8 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const cards = document.querySelectorAll(".tree-card, .profile-post-tile, .discover-person");
-  if ("IntersectionObserver" in window) {
+  const cards = document.querySelectorAll(
+    ".tree-card, .profile-post-tile, .discover-person, .landing-impact > div, .audience-card, .landing-feature, .landing-join",
+  );
+  if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    cards.forEach((card) => card.classList.add("reveal-pending"));
     const observer = new IntersectionObserver(
       (entries) => entries.forEach((entry) => {
         if (entry.isIntersecting) {

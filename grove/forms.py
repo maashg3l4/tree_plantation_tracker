@@ -2,9 +2,10 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from .models import Organization, OrganizationMember, Plot, Task
+from trees.form_styling import StyledFormMixin
 
 
-class OrganizationForm(forms.ModelForm):
+class OrganizationForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Organization
         fields = [
@@ -21,7 +22,7 @@ class OrganizationForm(forms.ModelForm):
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
 
 
-class PlotForm(forms.ModelForm):
+class PlotForm(StyledFormMixin, forms.ModelForm):
     boundary = forms.JSONField(widget=forms.HiddenInput)
 
     class Meta:
@@ -54,7 +55,7 @@ class PlotForm(forms.ModelForm):
         return boundary
 
 
-class TaskForm(forms.ModelForm):
+class TaskForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = [
@@ -72,7 +73,7 @@ class TaskForm(forms.ModelForm):
         }
 
 
-class OrganizationMemberForm(forms.ModelForm):
+class OrganizationMemberForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = OrganizationMember
         fields = ["user", "role"]
@@ -88,7 +89,7 @@ class OrganizationMemberForm(forms.ModelForm):
         self.fields["role"].choices = roles
 
 
-class TaskCompletionForm(forms.Form):
+class TaskCompletionForm(StyledFormMixin, forms.Form):
     proof_image = forms.ImageField(required=False)
 
     def clean_proof_image(self):

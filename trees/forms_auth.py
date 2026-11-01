@@ -6,12 +6,13 @@ from django.db.models.functions import Lower
 import re
 
 from .models import Profile
+from .form_styling import StyledFormMixin
 
 
 User = get_user_model()
 
 
-class SignupForm(forms.Form):
+class SignupForm(StyledFormMixin, forms.Form):
     email = forms.EmailField(max_length=254)
     password1 = forms.CharField(
         label="Password",
@@ -48,7 +49,7 @@ class SignupForm(forms.Form):
         return cleaned
 
 
-class EmailLoginForm(forms.Form):
+class EmailLoginForm(StyledFormMixin, forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={"autocomplete": "email"}))
     password = forms.CharField(
         strip=False,
@@ -79,7 +80,7 @@ class EmailLoginForm(forms.Form):
         return self.user
 
 
-class OnboardingForm(forms.Form):
+class OnboardingForm(StyledFormMixin, forms.Form):
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150, required=False)
     username = forms.CharField(max_length=30)

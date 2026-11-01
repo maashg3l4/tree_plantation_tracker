@@ -4,34 +4,74 @@
 <main class="landing">
   <section class="landing-hero" id="mission">
     <div class="landing-copy">
-      <p class="eyebrow">A greener world, grown together</p>
-      <h1>Make every tree<br><span>count for more.</span></h1>
-      <p class="landing-lede">A home for people who plant trees and the farms who grow them at scale. Track real progress, share what works, and grow a healthier future.</p>
+      <p class="eyebrow"><span class="landing-live-dot" aria-hidden="true"></span> A greener world, grown together</p>
+      <h1>Grow a little.<br><span>Change a lot.</span></h1>
+      <p class="landing-lede">Plant trees, share their progress, and turn everyday care into a community that keeps growing. Your next small action can take root here.</p>
       <div class="landing-actions">
-        <a class="primary-action" href="{% url 'tree_list' %}">Explore the community <span aria-hidden="true">→</span></a>
-        <a class="secondary-action" href="{% url 'grove:workspace' %}">Open Grove for farms</a>
+        <a class="primary-action" href="{% url 'signup_step1' %}">Start growing for free <span aria-hidden="true">→</span></a>
+        <a class="secondary-action" href="{% url 'tree_list' %}">Explore the community</a>
       </div>
       <div class="landing-trust">
-        <span><i></i> Built for people and planet</span>
-        <span>Bangladesh first · growing everywhere</span>
+        <span><i></i> Free to join. Rooted in real action.</span>
+        <span>For individual growers and local farms</span>
       </div>
     </div>
-    <div class="globe-stage" aria-label="An animated illustration of a connected green planet">
-      <div class="globe-orbit globe-orbit--one"></div>
-      <div class="globe-orbit globe-orbit--two"></div>
-      <div class="globe">
-        <div class="globe-grid"></div>
-        <svg class="globe-land" viewBox="0 0 520 520" aria-hidden="true">
-          <path d="m105 146 34-39 52-19 39 12 15 34-21 24 16 25-26 22-4 39-31 13-16 39-31-9-12-31-28-15-4-43-23-34 10-32Zm151 125 24-27 39 7 22 26-9 33 22 27-15 48-32 24-12 53-27 6-18-41-33-33 11-47-18-38 20-38Zm87-150 49-19 40 12 22 34-14 34-36 3-18 26-36-10-31-34 3-28Z"/>
-          <circle cx="345" cy="279" r="8"/><circle cx="303" cy="306" r="6"/><circle cx="195" cy="196" r="7"/>
-        </svg>
-        <span class="globe-pulse globe-pulse--a"></span><span class="globe-pulse globe-pulse--b"></span>
-        <span class="globe-pulse globe-pulse--c"></span>
-      </div>
-      <div class="globe-caption"><strong>One living planet</strong><span>Connected by the people caring for it</span></div>
-      <div class="globe-stat"><span>{{ public_farm_count }}</span><small>public farms</small></div>
+    <div class="forest-scene" role="img" aria-label="Illustration of a thriving green forest with a winding river and a treehouse">
+      <svg viewBox="0 0 780 580" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="forest-sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#edf2d8"/><stop offset="1" stop-color="#cfe4c3"/></linearGradient>
+          <linearGradient id="forest-island" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6b963b"/><stop offset="1" stop-color="#31572d"/></linearGradient>
+          <linearGradient id="forest-river" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5aabb0"/><stop offset="1" stop-color="#36757c"/></linearGradient>
+          <filter id="forest-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="13" flood-color="#24451d" flood-opacity=".22"/></filter>
+        </defs>
+        <circle cx="590" cy="130" r="82" fill="#fff2c9" opacity=".55"/>
+        <path d="M22 380C117 265 203 287 291 365S454 402 532 296s166-119 246-44v328H22Z" fill="#9ad34d" opacity=".62"/>
+        <path d="M4 424c90-112 177-109 260-14 60 69 143 84 225 7s180-100 289-31v194H4Z" fill="#7fbb42"/>
+        <path d="M0 465c97-81 173-64 243 5 72 71 158 71 233-4s178-78 304-14v128H0Z" fill="#568b37"/>
+        <path d="M438 415c-62 30-117 51-171 82-45 26-70 52-56 83h218c3-39 35-67 81-90 36-19 76-35 111-75-58-34-117-32-183 0Z" fill="url(#forest-river)" opacity=".95"/>
+        <path d="M52 468c113-80 205-64 279-10 57 42 110 50 179 8 73-43 152-53 270-18v132H52Z" fill="url(#forest-island)" filter="url(#forest-shadow)"/>
+        <path d="M465 281c-20 62-29 111-12 176m92-203c-3 78 7 125 47 178m-98-82c-57 44-104 60-157 64m177-109c53 42 91 56 136 58" fill="none" stroke="#41672d" stroke-width="24" stroke-linecap="round"/>
+        <path d="M472 274c-18 62-21 116-1 178m76-201c7 71 16 116 47 164" fill="none" stroke="#719c3c" stroke-width="11" stroke-linecap="round"/>
+        <g fill="#4a742f">
+          <path d="M425 218c-44 4-74 27-82 63 36 11 67 6 91-11 20 24 50 35 89 27-4-42-37-74-98-79Z"/>
+          <path d="M513 162c-61 7-96 37-102 78 41 13 83 7 116-17 26 27 64 37 110 25-8-51-53-82-124-86Z"/>
+          <path d="M580 113c-54 4-89 27-102 61 39 20 80 20 115 2 24 25 61 35 105 27-7-47-48-79-118-90Z"/>
+          <path d="M653 174c-39 5-64 23-72 49 30 14 60 13 86-1 18 20 46 27 78 20-8-39-39-62-92-68Z"/>
+          <path d="M382 287c-36 5-59 21-66 44 26 12 54 11 76-2 17 18 40 24 70 17-6-34-33-54-80-59Z"/>
+        </g>
+        <g fill="#82ae43">
+          <circle cx="441" cy="211" r="36"/><circle cx="481" cy="186" r="43"/><circle cx="526" cy="195" r="39"/>
+          <circle cx="513" cy="149" r="38"/><circle cx="558" cy="133" r="49"/><circle cx="608" cy="148" r="42"/>
+          <circle cx="626" cy="105" r="37"/><circle cx="668" cy="130" r="42"/><circle cx="703" cy="173" r="33"/>
+          <circle cx="386" cy="281" r="28"/><circle cx="421" cy="266" r="33"/><circle cx="455" cy="282" r="27"/>
+        </g>
+        <g fill="#9bcf50">
+          <circle cx="455" cy="181" r="24"/><circle cx="516" cy="164" r="25"/><circle cx="566" cy="111" r="29"/>
+          <circle cx="643" cy="111" r="23"/><circle cx="682" cy="151" r="25"/><circle cx="416" cy="254" r="21"/>
+        </g>
+        <g fill="#38512c" stroke="#6b6942" stroke-width="5" stroke-linejoin="round">
+          <path d="m491 276 64 0 9-51-82-3Z"/><path d="m477 226 39-40 42 37Z"/>
+          <path d="M503 276v28m34-28v28" fill="none" stroke-width="8"/>
+          <path d="M483 250h76v26h-76z"/>
+        </g>
+        <path d="M492 259h57" stroke="#a8bd56" stroke-width="5"/>
+        <g fill="#31552d">
+          <path d="m81 417 30-84 30 84h-20v40h-20v-40Zm88 19 25-69 25 69h-17v34h-17v-34Zm518-14 28-77 28 77h-19v39h-18v-39Zm53 25 21-59 22 59h-15v29h-13v-29Z"/>
+        </g>
+        <g fill="#86b940">
+          <circle cx="110" cy="327" r="24"/><circle cx="197" cy="361" r="20"/><circle cx="677" cy="334" r="23"/><circle cx="739" cy="385" r="18"/>
+        </g>
+        <g stroke="#365d31" stroke-width="5" stroke-linecap="round">
+          <path d="M287 465v-54m0 22-18-20m18 35 19-23M350 477v-39m0 14-14-14m14 26 16-18"/>
+          <path d="M642 471v-47m0 19-15-16m15 29 15-18"/>
+        </g>
+        <g fill="#a5ce50">
+          <ellipse cx="268" cy="410" rx="14" ry="7" transform="rotate(35 268 410)"/><ellipse cx="307" cy="422" rx="14" ry="7" transform="rotate(-35 307 422)"/>
+          <ellipse cx="337" cy="437" rx="12" ry="6" transform="rotate(35 337 437)"/><ellipse cx="365" cy="452" rx="12" ry="6" transform="rotate(-35 365 452)"/>
+        </g>
+      </svg>
+      <span class="forest-scene-caption"><span aria-hidden="true">✳</span> Small steps. A living future.</span>
     </div>
-    <div class="landing-scroll" aria-hidden="true"><span></span> A better way to grow</div>
   </section>
 
   <section class="landing-impact" aria-label="Current community impact">
@@ -45,14 +85,32 @@
       <span class="audience-kicker">For everyone who cares</span>
       <h2>Plant something.<br>Pass it on.</h2>
       <p>Share your trees, discover local planting stories, and turn encouragement into real-world action.</p>
-      <a href="{% url 'tree_list' %}">See the community <span aria-hidden="true">↗</span></a>
+      <a href="{% url 'signup_step1' %}">Join the community <span aria-hidden="true">↗</span></a>
     </article>
     <article class="audience-card audience-card--business">
       <span class="audience-kicker">For farms and growing businesses</span>
       <h2>Your land is living.<br>Manage it that way.</h2>
       <p>Map plots, register planting batches, coordinate field teams, and keep your operation's records together.</p>
-      <a href="{% url 'grove:workspace' %}">Discover Grove <span aria-hidden="true">↗</span></a>
+      <a href="{% url 'grove:workspace' %}">Open Grove for farms <span aria-hidden="true">↗</span></a>
     </article>
+  </section>
+  <section class="landing-features" aria-labelledby="landing-features-title">
+    <header><p class="eyebrow">A place to keep growing</p><h2 id="landing-features-title">More than a place to post a photo.</h2><p>Everything you need to turn good intentions into habits, knowledge, and shared impact.</p></header>
+    <div class="landing-feature-grid">
+      <a class="landing-feature" href="{% url 'tree_list' %}"><span aria-hidden="true">01</span><h3>Share your trees</h3><p>Keep a living record of the trees you plant and the care they need.</p><b>Explore the community <i aria-hidden="true">↗</i></b></a>
+      <a class="landing-feature" href="{% url 'daily_challenges' %}"><span aria-hidden="true">02</span><h3>Build a daily habit</h3><p>Small, practical challenges make environmental care part of your routine.</p><b>See today’s challenge <i aria-hidden="true">↗</i></b></a>
+      <a class="landing-feature" href="{% url 'discover' %}"><span aria-hidden="true">03</span><h3>Find your people</h3><p>Discover growers, local stories, and ideas worth carrying into your own garden.</p><b>Meet the community <i aria-hidden="true">↗</i></b></a>
+      <a class="landing-feature" href="{% url 'leaderboard' %}"><span aria-hidden="true">04</span><h3>Celebrate real impact</h3><p>Recognize the people showing up and making progress together.</p><b>See community impact <i aria-hidden="true">↗</i></b></a>
+      <a class="landing-feature" href="{% url 'grove:workspace' %}"><span aria-hidden="true">05</span><h3>Grow at every scale</h3><p>Give farms and teams a home for plots, planting records, and field work.</p><b>Discover Grove <i aria-hidden="true">↗</i></b></a>
+      <a class="landing-feature" href="{% url 'grove_market:listings' %}"><span aria-hidden="true">06</span><h3>Grow together</h3><p>Connect with the wider network of people and resources supporting growers.</p><b>Explore the marketplace <i aria-hidden="true">↗</i></b></a>
+    </div>
+  </section>
+  <section class="landing-join">
+    <span class="landing-join-sprout" aria-hidden="true">✳</span>
+    <p class="eyebrow">Your next chapter can start small</p>
+    <h2>One tree. One habit.<br>One community growing together.</h2>
+    <p>Make a free account and start your garden story today.</p>
+    <a class="primary-action" href="{% url 'signup_step1' %}">Create your free account <span aria-hidden="true">→</span></a>
   </section>
 </main>
 {% endblock %}

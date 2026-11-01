@@ -15,9 +15,13 @@
     <link rel="apple-touch-icon" href="{% static 'trees/icons/garden.svg' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" as="style">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    {% if request.LANGUAGE_CODE|slice:":2" == "bn" %}
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    {% endif %}
     <title>{% block title %}Canopy{% endblock %}</title>
+    {% block page_styles %}{% endblock %}
     <script>
         (function () {
             let preference = null;
@@ -26,11 +30,11 @@
             document.documentElement.classList.toggle('dark', dark);
         }());
     </script>
-    <link href="{% static 'trees/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="{% static 'trees/custom-overrides.css' %}" rel="stylesheet">
-    <link href="{% static 'trees/app.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/bootstrap.min.css' %}?v=2" rel="stylesheet">
+    <link href="{% static 'trees/custom-overrides.css' %}?v=7" rel="stylesheet">
+    <link href="{% static 'trees/app.css' %}?v=8" rel="stylesheet">
     <link href="{% static 'trees/navbar.css' %}" rel="stylesheet">
-    <link href="{% static 'trees/footer.css' %}" rel="stylesheet">
+    <link href="{% static 'trees/footer.css' %}?v=7" rel="stylesheet">
     <script src="{% static 'trees/micro-interactions.js' %}" defer></script>
 </head>
 <body>
@@ -58,17 +62,19 @@
 {% if request.resolver_match.url_name != 'tree_detail' and request.resolver_match.url_name != 'add_tree' %}
     {% include "partials/_navbar_mobile_bottom.html" %}
     {% include "partials/_post_sheet.html" %}
-    {% include "partials/_theme_toggle.html" %}
 {% endif %}
+{% include "partials/_theme_toggle.html" %}
 {% include "partials/_search_overlay.html" %}
 <div class="install-app-prompt" id="install-app-prompt" hidden>
     <span><strong>{% trans "Take your garden with you" %}</strong><small>{% trans "Install the app for a home-screen shortcut." %}</small></span>
     <button id="install-app-button" type="button">{% trans "Install" %}</button>
     <button id="dismiss-install-button" type="button" aria-label="{% trans 'Dismiss install prompt' %}">×</button>
 </div>
+{% if request.resolver_match.url_name == 'tree_list' %}
 <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 <script src="{% static 'trees/app.js' %}" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+{% endif %}
 <script src="{% static 'trees/navbar.js' %}" defer></script>
 <script src="{% static 'trees/theme.js' %}" defer></script>
 <script src="{% static 'trees/footer.js' %}" defer></script>
@@ -77,5 +83,6 @@
         window.addEventListener("load", () => navigator.serviceWorker.register("{% url 'service_worker' %}").catch((error) => console.warn("Offline support could not be enabled.", error)));
     }
 </script>
+{% block page_scripts %}{% endblock %}
 </body>
 </html>

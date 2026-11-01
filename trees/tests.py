@@ -6,6 +6,7 @@ from io import BytesIO
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -16,9 +17,11 @@ from .ai_services import AIServiceError, identify_species
 from .daily_jobs import publish_scheduled_posts
 from .gamification import record_activity, update_achievement_progress
 from .impact import refresh_user_impact_score
+from .form_styling import StyledFormMixin
 from .models import (
     Achievement,
     ChallengeParticipation,
+    Comment,
     DailyChallenge,
     HelpOffer,
     Notification,
@@ -35,6 +38,15 @@ from .models import (
     UserImpactScore,
     UserStreak,
 )
+
+
+class StyledWidgetFixture(StyledFormMixin, forms.Form):
+    name = forms.CharField()
+    details = forms.CharField(widget=forms.Textarea)
+    category = forms.ChoiceField(choices=[('tree', 'Tree')])
+    enabled = forms.BooleanField(required=False)
+    photo = forms.FileField(required=False)
+    hidden = forms.CharField(widget=forms.HiddenInput)
 
 
 class ProfileSettingsTests(TestCase):
@@ -54,11 +66,69 @@ class ProfileSettingsTests(TestCase):
             '/settings/language/',
             '/settings/privacy/',
             '/settings/security/',
+            '/settings/appearance/',
+            '/settings/impact/',
+            '/settings/actions/',
             '/settings/notifications/',
         ):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
+
+    def test_settings_sections_show_only_the_selected_working_controls(self):
+        profile = self.client.get('/settings/profile/')
+        self.assertContains(profile, 'data-image-preview="id_profile_picture"')
+        self.assertNotContains(profile, 'id="settings-security-title"')
+
+        account = self.client.get('/settings/account/')
+        self.assertContains(account, 'id="settings-account-title"')
+        self.assertContains(account, 'name="language"')
+
+        appearance = self.client.get('/settings/appearance/')
+        self.assertContains(appearance, 'data-theme-choice="system"')
+
+    def test_account_form_saves_only_account_and_language_fields(self):
+        response = self.client.post(
+            '/settings/account/',
+            {
+                'first_name': 'Updated',
+                'last_name': 'Grower',
+                'username': self.user.username,
+                'email': 'updated@example.com',
+                'language': 'bn',
+                'update_account': 'Save changes',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.first_name, 'Updated')
+        self.assertEqual(self.user.last_name, 'Grower')
+        self.assertEqual(self.user.email, 'updated@example.com')
+        self.assertEqual(self.user.profile.language, 'bn')
+        self.assertContains(response, 'Account details updated successfully.')
+        public_profile = self.client.get(reverse('user_profile', args=[self.user.username]))
+        self.assertContains(public_profile, 'Updated Grower')
+
+    def test_profile_form_saves_bio_and_public_profile_displays_it(self):
+        response = self.client.post(
+            '/settings/profile/',
+            {
+                'bio': 'Growing native trees with my family.',
+                'location': 'Dhaka',
+                'website': 'https://example.com',
+                'account_type': 'personal',
+                'update_profile': 'Save changes',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.bio, 'Growing native trees with my family.')
+        self.assertEqual(self.user.profile.location, 'Dhaka')
+        public_profile = self.client.get(reverse('user_profile', args=[self.user.username]))
+        self.assertContains(public_profile, 'Growing native trees with my family.')
 
     def test_settings_password_link_get_redirects_to_profile_settings(self):
         response = self.client.get('/settings/password/')
@@ -66,8 +136,18 @@ class ProfileSettingsTests(TestCase):
 
     def test_settings_forms_render_canopy_field_classes(self):
         response = self.client.get('/settings/')
-        self.assertContains(response, 'class="settings-field"')
-        self.assertContains(response, 'id="security-settings"')
+        self.assertContains(response, 'settings-field canopy-input')
+        self.assertContains(response, 'id="settings-profile-title"')
+
+    def test_styled_form_mixin_applies_consistent_widget_types(self):
+        form = StyledWidgetFixture()
+
+        self.assertIn('canopy-input', form.fields['name'].widget.attrs['class'])
+        self.assertIn('canopy-textarea', form.fields['details'].widget.attrs['class'])
+        self.assertIn('canopy-select', form.fields['category'].widget.attrs['class'])
+        self.assertIn('canopy-check', form.fields['enabled'].widget.attrs['class'])
+        self.assertIn('canopy-file', form.fields['photo'].widget.attrs['class'])
+        self.assertNotIn('class', form.fields['hidden'].widget.attrs)
 
     def test_tree_feed_is_paginated_with_stable_page_size(self):
         for number in range(13):
@@ -102,6 +182,163 @@ class ProfileSettingsTests(TestCase):
         response = self.client.get('/page-that-does-not-exist/')
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, 'Looks like this page wandered off.', status_code=404)
+
+
+class TreeComposerTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="tree-composer", password="test-password")
+        self.client.force_login(user)
+
+    def test_tree_composer_renders_responsive_sections_and_coordinate_inputs(self):
+        response = self.client.get(reverse("add_tree"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="tree-compose-card"')
+        self.assertContains(response, 'id="tree-location-title"')
+        self.assertContains(response, 'id="id_latitude"')
+        self.assertContains(response, 'id="id_longitude"')
+        self.assertContains(response, "tree-compose.js")
+        self.assertContains(response, "tree-divisions-data")
+        self.assertNotContains(response, "esri-leaflet-geocoder")
+
+    def test_tree_form_coordinates_are_visible_number_inputs(self):
+        from .forms import TreeForm
+
+        form = TreeForm()
+
+        self.assertEqual(form.fields["latitude"].widget.input_type, "number")
+        self.assertEqual(form.fields["longitude"].widget.input_type, "number")
+        self.assertEqual(form.fields["latitude"].widget.attrs["max"], "90")
+        self.assertEqual(form.fields["longitude"].widget.attrs["max"], "180")
+
+    def test_published_tree_submission_appears_in_community_and_detail(self):
+        response = self.client.post(
+            reverse("add_tree"),
+            {
+                "name": "First community sapling",
+                "species": "Mango",
+                "date_planted": "2025-01-01",
+                "caption": "A tree planted for shade.",
+            },
+        )
+
+        self.assertRedirects(response, reverse("tree_list"))
+        tree = Tree.objects.get(name="First community sapling")
+        self.assertEqual(tree.publication_status, "published")
+        community = self.client.get(reverse("tree_list"))
+        self.assertContains(community, "First community sapling")
+        detail = self.client.get(reverse("tree_detail", args=[tree.pk]))
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "A tree planted for shade.")
+
+
+class TreeOwnerActionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="tree-owner-actions", password="test-password")
+        self.member = User.objects.create_user(username="tree-member-actions", password="test-password")
+        self.tree = Tree.objects.create(
+            user=self.owner,
+            name="Owner-managed tree",
+            date_planted=date(2025, 1, 1),
+        )
+        self.client.force_login(self.owner)
+
+    def test_tree_owner_can_add_health_log_and_task(self):
+        health_form = self.client.get(reverse("add_health_log", args=[self.tree.pk]))
+        task_form = self.client.get(reverse("add_task", args=[self.tree.pk]))
+        self.assertContains(
+            health_form,
+            f'href="{reverse("tree_detail", args=[self.tree.pk])}"',
+        )
+        self.assertContains(
+            task_form,
+            f'href="{reverse("tree_detail", args=[self.tree.pk])}"',
+        )
+
+        health_response = self.client.post(
+            reverse("add_health_log", args=[self.tree.pk]),
+            {
+                "date": "2025-02-01",
+                "health_status": "Healthy",
+                "notes": "New leaves are growing.",
+            },
+        )
+        task_response = self.client.post(
+            reverse("add_task", args=[self.tree.pk]),
+            {
+                "task_type": "Watering",
+                "scheduled_date": "2025-02-02",
+            },
+        )
+
+        self.assertRedirects(health_response, reverse("tree_detail", args=[self.tree.pk]))
+        self.assertRedirects(task_response, reverse("tree_detail", args=[self.tree.pk]))
+        self.assertEqual(self.tree.health_logs.count(), 1)
+        self.assertEqual(self.tree.tasks.count(), 1)
+
+    def test_non_owner_cannot_manage_tree_health_tasks_or_death_status(self):
+        task = self.tree.tasks.create(task_type="Watering", scheduled_date=date(2025, 2, 2))
+        self.client.force_login(self.member)
+
+        self.assertEqual(
+            self.client.post(reverse("add_health_log", args=[self.tree.pk])).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(reverse("add_task", args=[self.tree.pk])).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(reverse("mark_task_completed", args=[task.pk])).status_code,
+            404,
+        )
+        death_response = self.client.post(
+            reverse("tree_detail", args=[self.tree.pk]),
+            {"form_type": "mark_dead", "death_reason": "Still alive"},
+        )
+        self.assertEqual(death_response.status_code, 403)
+        self.tree.refresh_from_db()
+        self.assertFalse(self.tree.is_dead)
+        task.refresh_from_db()
+        self.assertFalse(task.completed)
+
+    def test_manage_controls_are_only_shown_to_the_tree_owner(self):
+        self.tree.tasks.create(task_type="Watering", scheduled_date=date(2025, 2, 2))
+        owner_page = self.client.get(reverse("tree_detail", args=[self.tree.pk]))
+        self.assertContains(owner_page, "Add health update")
+        self.assertContains(owner_page, "Add scheduled task")
+        self.assertContains(owner_page, "Mark as dead")
+        self.assertContains(owner_page, "Mark done")
+
+        self.client.force_login(self.member)
+        public_page = self.client.get(reverse("tree_detail", args=[self.tree.pk]))
+        self.assertEqual(public_page.status_code, 200)
+        self.assertNotContains(public_page, "Add health update")
+        self.assertNotContains(public_page, "Add scheduled task")
+        self.assertNotContains(public_page, "Mark as dead")
+        self.assertNotContains(public_page, "Mark done")
+
+    def test_owner_task_completion_requires_post_and_persists(self):
+        task = self.tree.tasks.create(task_type="Watering", scheduled_date=date(2025, 2, 2))
+        url = reverse("mark_task_completed", args=[task.pk])
+
+        self.assertEqual(self.client.get(url).status_code, 405)
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["completed"])
+        task.refresh_from_db()
+        self.assertTrue(task.completed)
+
+    def test_owner_cannot_mark_tree_dead_without_reason(self):
+        response = self.client.post(
+            reverse("tree_detail", args=[self.tree.pk]),
+            {"form_type": "mark_dead", "death_reason": "   "},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.tree.refresh_from_db()
+        self.assertFalse(self.tree.is_dead)
 
 
 class ImpactReactionTests(TestCase):
@@ -201,6 +438,42 @@ class ImpactReactionTests(TestCase):
         self.assertContains(response, 'data-tree-status="unknown"')
         self.assertNotContains(response, '👍 Like')
 
+    def test_feed_bounds_prefetched_activity_but_keeps_total_counts(self):
+        for number in range(6):
+            user = User.objects.create_user(
+                username=f"reaction-member-{number}",
+                password="test-password",
+            )
+            for reaction_type in ("care", "inspiring", "insight"):
+                Reaction.objects.create(
+                    tree=self.tree,
+                    user=user,
+                    reaction=reaction_type,
+                )
+        for number in range(8):
+            Comment.objects.create(
+                tree=self.tree,
+                user=self.owner,
+                text=f"Community note {number}",
+            )
+
+        response = self.client.get(reverse("tree_list"))
+
+        self.assertEqual(response.status_code, 200)
+        tree = next(item for item in response.context["trees"] if item.pk == self.tree.pk)
+        self.assertEqual(tree.reaction_counts["care"], 6)
+        self.assertEqual(tree.reaction_counts["inspiring"], 6)
+        self.assertEqual(tree.comment_count, 8)
+        self.assertEqual(len(tree.latest_reactions), 5)
+        self.assertEqual(len(tree.feed_comments), 3)
+        self.assertContains(
+            response,
+            "<h3>Community notes <span>(8)</span></h3>",
+            html=True,
+        )
+        self.assertContains(response, "Community note 7")
+        self.assertNotContains(response, "Community note 0")
+
     def test_inspiring_reactions_boost_posts_in_feed_order(self):
         another_tree = Tree.objects.create(
             user=self.owner,
@@ -231,7 +504,7 @@ class ImpactReactionTests(TestCase):
 
         self.assertRedirects(response, reverse('profile'))
         self.assertEqual(UserImpactScore.objects.get(user=self.actor).trees_planted, 1)
-        self.assertContains(self.client.get(reverse('profile')), 'Pledge queue')
+        self.assertContains(self.client.get(reverse('impact_settings')), 'Planting pledges')
 
     def test_deleting_tree_recalculates_reactors_impact_scores(self):
         reaction = Reaction.objects.create(user=self.actor, tree=self.tree, reaction='help')
@@ -585,8 +858,10 @@ class CommunityCoreTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
         self.assertTrue(response["Cache-Control"].startswith("max-age=0"))
-        self.assertContains(response, 'const CACHE_NAME = "tree-garden-v4"')
-        self.assertContains(response, '"/static/trees/footer.css"')
+        self.assertContains(response, 'const CACHE_NAME = "tree-garden-v9"')
+        self.assertContains(response, '"/static/trees/bootstrap.min.css?v=2"')
+        self.assertContains(response, '"/static/trees/footer.css?v=7"')
+        self.assertContains(response, '"/static/trees/custom-overrides.css?v=7"')
 
     def test_offline_page_cache_opt_in_is_limited_to_anonymous_requests(self):
         anonymous = self.client.get(reverse("tree_list"))

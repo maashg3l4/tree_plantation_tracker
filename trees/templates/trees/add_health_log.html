@@ -9,5 +9,5 @@
         <button type="submit" class="btn btn-success fade-in-up">Submit</button>
     </form>
 </div>
-<a href="/trees/{{ tree.id }}/" class="btn btn-secondary mt-3 fade-in-up">&larr; Back to Tree Details</a>
+<a href="{% url 'tree_detail' tree.id %}" class="btn btn-secondary mt-3 fade-in-up">&larr; Back to Tree Details</a>
 {% endblock %}

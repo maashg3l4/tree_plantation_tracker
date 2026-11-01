@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.db import DatabaseError
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm as DjangoPasswordChangeForm
@@ -51,6 +51,7 @@ from .models import (
 
 
 from .forms import TreeForm, HealthLogForm, TaskForm
+from .location_data import DISTRICTS, DIVISIONS
 from .forms_auth import EmailLoginForm, OnboardingForm, SignupForm
 from .forms_profile import ProfileForm, UserForm, PasswordChangeForm
 from .impact import refresh_user_impact_score
@@ -391,7 +392,11 @@ def notification_center(request):
     return render(
         request,
         "notifications/center.html",
-        {"notifications": notifications[:100], "unread_count": unread_count},
+        {
+            "notifications": notifications[:100],
+            "unread_count": unread_count,
+            "active_section": "notifications",
+        },
     )
 
 
@@ -679,17 +684,26 @@ def tree_list(request):
     ).select_related(
         'user', 'user__profile'
     ).prefetch_related(
-        Prefetch('reactions', queryset=Reaction.objects.select_related('user').order_by('-created_at')),
+        Prefetch(
+            'reactions',
+            queryset=Reaction.objects.select_related('user').order_by('-created_at', '-pk')[:5],
+            to_attr='latest_reactions',
+        ),
         Prefetch(
             'comments',
             queryset=Comment.objects.filter(moderation_status="visible")
-            .select_related('user').order_by('created_at'),
+            .select_related('user').order_by('-created_at', '-pk')[:3],
+            to_attr='feed_comments',
         ),
         Prefetch('media'),
-        Prefetch('health_logs', queryset=HealthLog.objects.order_by('-date', '-pk')),
+        Prefetch(
+            'health_logs',
+            queryset=HealthLog.objects.order_by('-date', '-pk')[:1],
+            to_attr='latest_health_logs',
+        ),
         Prefetch(
             'health_analyses',
-            queryset=TreeHealthAnalysis.objects.order_by('-created_at'),
+            queryset=TreeHealthAnalysis.objects.order_by('-created_at', '-pk')[:1],
             to_attr='prefetched_health_analyses',
         ),
     ).annotate(
@@ -703,26 +717,48 @@ def tree_list(request):
     ).order_by('-inspiration_boost', '-updated_at', '-pk')
     page_obj = Paginator(trees, 12).get_page(request.GET.get("page"))
     trees = page_obj.object_list
+    tree_ids = [tree.pk for tree in trees]
+    reaction_counts = {}
+    for item in Reaction.objects.filter(tree_id__in=tree_ids).values(
+        'tree_id', 'reaction'
+    ).annotate(count=Count('pk')):
+        reaction_counts[(item['tree_id'], item['reaction'])] = item['count']
+    user_reactions = {}
+    if request.user.is_authenticated:
+        user_reactions = {
+            (item['tree_id'], item['reaction']): item['intensity']
+            for item in Reaction.objects.filter(
+                tree_id__in=tree_ids, user=request.user
+            ).values('tree_id', 'reaction', 'intensity')
+        }
+    comment_counts = {
+        item['tree_id']: item['count']
+        for item in Comment.objects.filter(
+            tree_id__in=tree_ids, moderation_status="visible"
+        ).values('tree_id').annotate(count=Count('pk'))
+    }
     for tree in trees:
         profile = getattr(tree.user, 'profile', None)
         tree.profile_picture = profile.profile_picture if profile else None
-        tree.reaction_counts = {reaction_type: 0 for reaction_type, _ in Reaction.REACTION_TYPES}
+        tree.reaction_counts = {
+            reaction_type: reaction_counts.get((tree.pk, reaction_type), 0)
+            for reaction_type, _ in Reaction.REACTION_TYPES
+        }
         tree.user_reaction_state = {}
-        for reaction in tree.reactions.all():
-            tree.reaction_counts[reaction.reaction] += 1
-            if request.user.is_authenticated and reaction.user_id == request.user.id:
-                tree.user_reaction_state[reaction.reaction] = reaction.intensity
+        for (tree_id, reaction_type), intensity in user_reactions.items():
+            if tree_id == tree.pk:
+                tree.user_reaction_state[reaction_type] = intensity
+        tree.comment_count = comment_counts.get(tree.pk, 0)
         tree.reaction_state = ','.join(
             f'{reaction_type}:{intensity}'
             for reaction_type, intensity in tree.user_reaction_state.items()
         )
-        tree.latest_reactions = list(tree.reactions.all())[:5]
         tree.latest_health_analysis = next(iter(tree.prefetched_health_analyses), None)
         tree.health_issues_json = json.dumps(tree.latest_health_analysis.issues) if tree.latest_health_analysis else '[]'
         tree.health_recommendations_json = json.dumps(
             tree.latest_health_analysis.recommendations
         ) if tree.latest_health_analysis else '[]'
-        latest_health = next(iter(tree.health_logs.all()), None)
+        latest_health = next(iter(tree.latest_health_logs), None)
         tree.has_health_data = bool(latest_health)
         if tree.is_dead or (latest_health and latest_health.is_dead):
             tree.feed_status = 'struggling'
@@ -858,7 +894,11 @@ def add_tree(request):
             )
     else:
         form = TreeForm()
-    return render(request, 'trees/add_tree.html', {'form': form})
+    return render(
+        request,
+        'trees/add_tree.html',
+        {'form': form, 'divisions': DIVISIONS, 'districts': DISTRICTS},
+    )
 
 @login_required
 def tree_detail(request, pk):
@@ -913,12 +953,17 @@ def tree_detail(request, pk):
     task_form = TaskForm()
     # Handle comments
     if request.method == 'POST' and request.POST.get('form_type') == 'comment':
-        text = request.POST.get('comment_text')
+        text = request.POST.get('comment_text', '').strip()
         if text:
             Comment.objects.create(tree=tree, user=request.user, text=text)
             return redirect('tree_detail', pk=tree.pk)
     if request.method == 'POST':
         if request.POST.get('form_type') == 'health':
+            if tree.user_id != request.user.id:
+                return JsonResponse(
+                    {'success': False, 'error': 'Only the tree owner can update its health.'},
+                    status=403,
+                )
             health_form = HealthLogForm(request.POST)
             if health_form.is_valid():
                 log = health_form.save(commit=False)
@@ -930,6 +975,11 @@ def tree_detail(request, pk):
                 log.save()
                 return redirect('tree_detail', pk=tree.pk)
         elif request.POST.get('form_type') == 'task':
+            if tree.user_id != request.user.id:
+                return JsonResponse(
+                    {'success': False, 'error': 'Only the tree owner can manage its tasks.'},
+                    status=403,
+                )
             task_form = TaskForm(request.POST)
             if task_form.is_valid():
                 task = task_form.save(commit=False)
@@ -937,7 +987,17 @@ def tree_detail(request, pk):
                 task.save()
                 return redirect('tree_detail', pk=tree.pk)
         elif request.POST.get('form_type') == 'mark_dead':
-            reason = request.POST.get('death_reason')
+            if tree.user_id != request.user.id:
+                return JsonResponse(
+                    {'success': False, 'error': 'Only the tree owner can update its status.'},
+                    status=403,
+                )
+            reason = request.POST.get('death_reason', '').strip()
+            if not reason:
+                return JsonResponse(
+                    {'success': False, 'error': 'Add a reason before marking this tree as dead.'},
+                    status=400,
+                )
             tree.is_dead = True
             tree.death_reason = reason
             tree.save()
@@ -964,37 +1024,51 @@ def tree_detail(request, pk):
     })
 
 @login_required
+@require_POST
 def mark_task_completed(request, task_id):
-    if request.method == 'POST':
-        from .models import Task
-        task = Task.objects.get(id=task_id)
-        task.completed = True
-        task.save()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=400)
+    from .models import Task
 
-def profile_view(request):
+    task = get_object_or_404(Task, pk=task_id, tree__user=request.user)
+    task.completed = True
+    task.save(update_fields=['completed'])
+    return JsonResponse({'success': True, 'completed': True})
+
+def profile_view(request, section="profile"):
     if not request.user.is_authenticated:
         return redirect('login')
+    if section not in {
+        "profile", "account", "privacy", "security", "appearance", "impact", "actions"
+    }:
+        raise Http404
     profile, created = Profile.objects.get_or_create(user=request.user)
-    impact_score, _ = UserImpactScore.objects.get_or_create(user=request.user)
     user_form = UserForm(instance=request.user, profile=profile)
     profile_form = ProfileForm(instance=profile)
+    if section == "profile":
+        profile_form.fields.pop("language")
+    language_form = ProfileForm(instance=profile)
+    language_form.fields = {"language": language_form.fields["language"]}
     password_form = PasswordChangeForm()
     message = None
     if request.method == 'POST':
-        if 'update_profile' in request.POST:
+        if section == "profile" and 'update_profile' in request.POST:
+            profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+            profile_form.fields.pop("language")
+            if profile_form.is_valid():
+                profile_form.save()
+                message = 'Profile updated successfully.'
+        elif section == "account" and 'update_account' in request.POST:
             previous_username = request.user.username
             user_form = UserForm(request.POST, instance=request.user, profile=profile)
-            profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
-            if user_form.is_valid() and profile_form.is_valid():
+            language_form = ProfileForm(request.POST, instance=profile)
+            language_form.fields = {"language": language_form.fields["language"]}
+            if user_form.is_valid() and language_form.is_valid():
                 user_form.save()
-                profile_form.save()
+                language_form.save()
                 if request.user.username != previous_username:
                     profile.username_changed_at = timezone.now()
                     profile.save(update_fields=['username_changed_at'])
-                message = 'Profile updated successfully.'
-        elif 'change_password' in request.POST:
+                message = 'Account details updated successfully.'
+        elif section == "security" and 'change_password' in request.POST:
             password_form = PasswordChangeForm(request.POST)
             if password_form.is_valid():
                 old = password_form.cleaned_data['old_password']
@@ -1009,15 +1083,28 @@ def profile_view(request):
                     request.user.save()
                     update_session_auth_hash(request, request.user)
                     message = 'Password changed successfully.'
+    impact_score = None
+    pledges = []
+    notifications = []
+    if section == "impact":
+        impact_score, _ = UserImpactScore.objects.get_or_create(user=request.user)
+        pledges = Pledge.objects.filter(user=request.user).select_related(
+            'source_post'
+        ).order_by('-created_at')
+        notifications = Notification.objects.filter(user=request.user).select_related(
+            'actor', 'tree'
+        ).order_by('-created_at')[:10]
     return render(request, 'registration/profile.html', {
+        'active_section': section,
         'user_form': user_form,
         'profile_form': profile_form,
+        'language_form': language_form,
         'password_form': password_form,
         'profile': profile,
         'message': message,
         'impact_score': impact_score,
-        'pledges': Pledge.objects.filter(user=request.user).select_related('source_post').order_by('-created_at'),
-        'notifications': Notification.objects.filter(user=request.user).select_related('actor', 'tree').order_by('-created_at')[:10],
+        'pledges': pledges,
+        'notifications': notifications,
     })
 
 

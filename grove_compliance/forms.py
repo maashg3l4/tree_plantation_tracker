@@ -1,9 +1,10 @@
 from django import forms
 
 from .models import CertificationDocument
+from trees.form_styling import StyledFormMixin
 
 
-class CertificationDocumentForm(forms.ModelForm):
+class CertificationDocumentForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = CertificationDocument
         fields = ["title", "certification_type", "document", "issued_by", "issued_on", "expires_on", "notes"]

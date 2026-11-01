@@ -1,9 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from .models import Tree
 from .forms import HealthLogForm, TaskForm
 
+@login_required
 def add_health_log(request, pk):
-    tree = get_object_or_404(Tree, pk=pk)
+    tree = get_object_or_404(Tree, pk=pk, user=request.user)
     if tree.is_dead:
         return redirect('tree_detail', pk=pk)
     if request.method == 'POST':
@@ -17,8 +19,9 @@ def add_health_log(request, pk):
         form = HealthLogForm()
     return render(request, 'trees/add_health_log.html', {'form': form, 'tree': tree})
 
+@login_required
 def add_task(request, pk):
-    tree = get_object_or_404(Tree, pk=pk)
+    tree = get_object_or_404(Tree, pk=pk, user=request.user)
     if tree.is_dead:
         return redirect('tree_detail', pk=pk)
     if request.method == 'POST':

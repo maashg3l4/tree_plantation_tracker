@@ -3,6 +3,7 @@
 {% block title %}{{ tree.name }}{% endblock %}
 {% block content %}
 
+<main class="tree-detail-page">
 <div class="card mb-4">
     <div class="card-body">
         <h5 class="mb-2">Planted by: <span class="fw-bold">{{ tree.user.username }}</span></h5>
@@ -10,7 +11,7 @@
         {% if tree.caption %}<p>{{ tree.caption|linebreaksbr }}</p>{% endif %}
         <p><strong>Location:</strong>
             {% if tree.latitude and tree.longitude %}
-                <a href="https://www.openstreetmap.org/?mlat={{ tree.latitude }}&mlon={{ tree.longitude }}#map=18/{{ tree.latitude }}/{{ tree.longitude }}" target="_blank">
+                <a href="https://www.openstreetmap.org/?mlat={{ tree.latitude }}&mlon={{ tree.longitude }}#map=18/{{ tree.latitude }}/{{ tree.longitude }}" target="_blank" rel="noopener noreferrer">
                     {{ tree.location }} <span class="badge bg-info">Map</span>
                 </a>
             {% else %}
@@ -20,7 +21,7 @@
         <p><strong>Planted on:</strong> {{ tree.date_planted }}</p>
         <p><strong>Last Updated:</strong> {{ tree.updated_at|date:'Y-m-d H:i' }}</p>
         {% if tree.image %}
-            <img src="{{ tree.image.url }}" class="img-fluid rounded mb-3" style="max-width: 300px;">
+            <img src="{{ tree.image.url }}" class="img-fluid rounded mb-3" style="max-width: 300px;" alt="{{ tree.name }}">
         {% endif %}
         {% for media in tree.media.all %}{% if media.media_type == "video" %}<video class="img-fluid rounded mb-3" controls preload="metadata"><source src="{{ media.file.url }}"></video>{% else %}<img src="{{ media.file.url }}" class="img-fluid rounded mb-3" style="max-width: 300px;" loading="lazy" alt="More of {{ tree.name }}">{% endif %}{% endfor %}
         {% include "trees/partials/tree_health_chip.html" with tree=tree user=user %}
@@ -74,47 +75,60 @@
                 </form>
             </details>
         {% endif %}
-        {% if not tree.is_dead %}
-            <a href="{% url 'add_health_log' tree.id %}" class="btn btn-outline-success fade-in-up mb-2">Add Health Log</a>
-            <h4>🧑‍🌾 Scheduled Tasks</h4>
-            <ul class="list-group mb-3">
-                {% for task in tasks %}
-                    <li class="list-group-item d-flex align-items-center">
-                        <span class="me-2">{{ task.scheduled_date }} — {{ task.task_type }}</span>
-                        {% if task.completed %}
-                            <span class="ms-auto text-success" title="Completed">✅ Done</span>
-                        {% else %}
-                            <input type="checkbox" class="form-check-input ms-auto mark-complete-checkbox" data-task-id="{{ task.id }}">
-                            <span class="ms-2 text-danger">❌ Not Done</span>
-                        {% endif %}
-                    </li>
-                {% empty %}
-                    <li class="list-group-item">No tasks scheduled.</li>
-                {% endfor %}
-            </ul>
-            <a href="{% url 'add_task' tree.id %}" class="btn btn-outline-primary fade-in-up">Add Scheduled Task</a>
+        {% if user.pk == tree.user_id and not tree.is_dead %}
+            <a href="{% url 'add_health_log' tree.id %}" class="tree-detail-action tree-detail-action--secondary">Add health update</a>
+        {% endif %}
+        <h4>🧑‍🌾 Scheduled tasks</h4>
+        <ul class="list-group mb-3">
+            {% for task in tasks %}
+                <li class="list-group-item d-flex align-items-center">
+                    <span class="me-2">{{ task.scheduled_date }} — {{ task.task_type }}</span>
+                    {% if task.completed %}
+                        <span class="ms-auto text-success" title="Completed">✓ Done</span>
+                    {% elif user.pk == tree.user_id %}
+                        <label class="tree-task-complete ms-auto"><input type="checkbox" class="mark-complete-checkbox" data-task-id="{{ task.id }}"><span>Mark done</span></label>
+                    {% else %}
+                        <span class="ms-auto text-muted">Not done</span>
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li class="list-group-item">No tasks scheduled.</li>
+            {% endfor %}
+        </ul>
+        {% if user.pk == tree.user_id and not tree.is_dead %}
+            <a href="{% url 'add_task' tree.id %}" class="tree-detail-action tree-detail-action--secondary">Add scheduled task</a>
+            <div class="tree-detail-status" id="task-update-status" role="status" aria-live="polite"></div>
             <script>
             document.addEventListener('DOMContentLoaded', function() {
               document.querySelectorAll('.mark-complete-checkbox').forEach(function(checkbox) {
                 checkbox.addEventListener('change', function() {
-                  if (this.checked) {
-                    fetch(`/task/${this.dataset.taskId}/complete/`, {
-                      method: 'POST',
-                      headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
-                      },
-                    }).then(() => {
-                      this.parentElement.innerHTML = '<span class="ms-auto text-success" title="Completed">✅ Done</span>';
-                    });
-                  }
+                  if (!this.checked) return;
+                  const control = this;
+                  fetch(`/task/${control.dataset.taskId}/complete/`, {
+                    method: 'POST',
+                    headers: {
+                      'X-CSRFToken': '{{ csrf_token }}',
+                      'X-Requested-With': 'XMLHttpRequest',
+                    },
+                  }).then((response) => {
+                    if (!response.ok) throw new Error('Task could not be updated. Please refresh and try again.');
+                    return response.json();
+                  }).then((result) => {
+                    if (!result.success) throw new Error('Task could not be updated. Please refresh and try again.');
+                    control.parentElement.textContent = '✓ Done';
+                    control.parentElement.classList.add('is-complete');
+                  }).catch((error) => {
+                    control.checked = false;
+                    document.getElementById('task-update-status').textContent = error.message;
+                  });
                 });
               });
             });
             </script>
         {% endif %}
         <div class="mt-4">
-            {% if not tree.is_dead %}
-                <button class="btn btn-danger" id="show-dead-form" type="button">Mark as Dead</button>
+            {% if user.pk == tree.user_id and not tree.is_dead %}
+                <button class="tree-detail-action tree-detail-action--danger" id="show-dead-form" type="button">Mark as dead</button>
                 <form method="POST" id="dead-form" style="display:none;">
                     {% csrf_token %}
                     <input type="hidden" name="form_type" value="mark_dead">
@@ -122,7 +136,7 @@
                         <label for="death_reason" class="form-label">Provide Reason:</label>
                         <textarea name="death_reason" id="death_reason" class="form-control" rows="2" required></textarea>
                     </div>
-                    <button type="submit" class="btn btn-danger">Submit</button>
+                    <button type="submit" class="tree-detail-action tree-detail-action--danger">Save tree status</button>
                 </form>
                 <script>
                 document.getElementById('show-dead-form').onclick = function() {
@@ -130,11 +144,12 @@
                     this.style.display = 'none';
                 };
                 </script>
-            {% elif tree.death_reason %}
+            {% elif tree.is_dead and tree.death_reason %}
                 <p class="text-danger mt-3"><strong>Reason:</strong> {{ tree.death_reason }}</p>
             {% endif %}
         </div>
-        <a href="/" class="btn btn-secondary mt-3 fade-in-up">&larr; Back to Tree List</a>
+        <a href="{% url 'tree_list' %}" class="tree-detail-action tree-detail-action--secondary">← Back to community</a>
     </div>
 </div>
+</main>
 {% endblock %}

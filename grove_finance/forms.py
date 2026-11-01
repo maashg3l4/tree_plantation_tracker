@@ -1,9 +1,10 @@
 from django import forms
 
 from .models import Transaction
+from trees.form_styling import StyledFormMixin
 
 
-class TransactionForm(forms.ModelForm):
+class TransactionForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Transaction
         fields = ["plot", "trans_type", "category", "amount", "currency", "description", "date", "receipt"]

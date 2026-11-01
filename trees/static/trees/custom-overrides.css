@@ -1,4 +1,4 @@
-/* Custom overrides for Bootstrap theme - dark green and animated text */
+/* Custom overrides for Bootstrap's legacy form controls. */
 :root {
   --bs-green: #145a32 !important; /* dark green */
   --bs-success: #145a32 !important;
@@ -19,26 +19,18 @@
   color: #fff !important;
 }
 
-/* Animated text styles */
-@keyframes animated-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
 .animated-text {
-  background: linear-gradient(270deg, #32fbe2, #145a32, #ea39b8, #32fbe2);
-  background-size: 600% 600%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: animated-gradient 4s ease-in-out infinite;
+  color: var(--text, #17251c);
+}
+.dark .animated-text {
+  color: var(--text, #e8f0e9);
 }
 @keyframes fadeInUp {
-  0% { opacity: 0; transform: translateY(30px); }
-  100% { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .fade-in-up {
-  animation: fadeInUp 1.2s cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation: fadeInUp .35s ease-out both;
 }
 
 body {
@@ -46,6 +38,15 @@ body {
   background: #f8f9fa;
 }
 
+body, body * {
+  text-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up {
+    animation: none;
+  }
+}
 .container {
   max-width: 700px;
   margin: 0 auto;

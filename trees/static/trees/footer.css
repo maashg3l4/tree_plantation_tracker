@@ -6,9 +6,9 @@
 }
 
 .dark .canopy-footer {
-    border-color: #14532d;
-    background: #0f172a;
-    color: #e2e8f0;
+    border-color: var(--line);
+    background: var(--surface);
+    color: var(--text);
 }
 
 .canopy-footer-main {

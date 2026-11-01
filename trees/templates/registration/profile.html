@@ -1,118 +1,99 @@
-{% extends "base.html" %}
-{% block title %}Settings · Canopy{% endblock %}
-{% block content %}
-<main class="settings-page">
-  <header class="settings-heading">
-    <p class="eyebrow">Your Canopy</p>
-    <h1>Settings</h1>
-    <p>Manage your profile, account details, and security in one place.</p>
-  </header>
-  <nav class="settings-nav" aria-label="Settings sections">
-    <a href="{% url 'profile_settings' %}#profile-settings">Profile</a>
-    <a href="{% url 'account_settings' %}#account-settings">Account</a>
-    <a href="{% url 'privacy_settings' %}#privacy-settings">Privacy</a>
-    <a href="{% url 'security_settings' %}#security-settings">Security</a>
-    <a href="{% url 'language_settings' %}#id_language">Language</a>
-    <a href="{% url 'notification_settings' %}">Notifications</a>
-  </nav>
-
-  {% if message %}
-    <p class="settings-message" role="status">{{ message }}</p>
-  {% endif %}
-
-  <section class="settings-card" id="profile-settings" aria-labelledby="profile-settings-title">
-    <div class="settings-card-heading">
-      <div><p class="eyebrow">Let people know you</p><h2 id="profile-settings-title">Your profile</h2></div>
-      {% if profile.profile_picture %}<img class="settings-avatar" src="{{ profile.profile_picture.url }}" alt="Current profile picture">{% else %}<span class="settings-avatar settings-avatar-fallback" aria-hidden="true">{{ user.username|first|upper }}</span>{% endif %}
-    </div>
-    <form method="post" enctype="multipart/form-data" class="settings-form">
+{% extends "settings/base_settings.html" %}
+{% block settings_content %}
+{% if active_section == "profile" %}
+  <section class="settings-section" aria-labelledby="settings-profile-title">
+    <header class="settings-section-heading">
+      <div><p class="eyebrow">Make it yours</p><h2 id="settings-profile-title">Profile</h2><p>Share a little about the person growing behind the garden.</p></div>
+      <a class="settings-secondary-link" href="{% url 'user_profile' user.username %}">View public profile <span aria-hidden="true">↗</span></a>
+    </header>
+    <form method="post" enctype="multipart/form-data" class="settings-form" data-dirty-form>
       {% csrf_token %}
-      <div class="settings-field-group" id="account-settings">
-        <h3>Account details</h3>
-        {{ user_form.as_p }}
+      <div class="settings-media-previews">
+        <div class="settings-media-preview">
+          {% if profile.profile_picture %}<img data-image-preview="id_profile_picture" src="{{ profile.profile_picture.url }}" alt="Current profile photo">{% else %}<span class="settings-avatar settings-avatar-fallback" data-image-preview="id_profile_picture" aria-hidden="true">{{ user.username|first|upper }}</span>{% endif %}
+          <div><strong>Profile photo</strong><small>Square images work best.</small></div>
+        </div>
+        <div class="settings-media-preview settings-media-preview--cover">
+          {% if profile.cover_image %}<img data-image-preview="id_cover_image" src="{{ profile.cover_image.url }}" alt="Current profile cover">{% else %}<span class="settings-cover-placeholder" data-image-preview="id_cover_image" aria-hidden="true">Your garden, your story</span>{% endif %}
+          <div><strong>Cover image</strong><small>Set the scene for your profile.</small></div>
+        </div>
       </div>
-      <div class="settings-field-group">
-        <h3>About you</h3>
+      <div class="settings-form-fields">
         {{ profile_form.as_p }}
       </div>
-      {% if profile.account_type == "personal" %}
-        <p><a class="settings-secondary-link" href="{% url 'grove:workspace' %}">Create or join a Grove business workspace</a></p>
-      {% endif %}
-      <button type="submit" name="update_profile" class="settings-primary-button">Save profile</button>
+      {% if profile.account_type == "personal" %}<a class="settings-secondary-link" href="{% url 'grove:workspace' %}">Create or join a Grove business workspace <span aria-hidden="true">↗</span></a>{% endif %}
+      <div class="settings-form-footer"><span class="settings-save-hint">Only the fields you change will be updated.</span><button type="submit" name="update_profile" class="settings-primary-button" data-save-button disabled>Save changes</button></div>
     </form>
   </section>
-
-  <section class="settings-card" id="privacy-settings" aria-labelledby="privacy-settings-title">
-    <p class="eyebrow">Visibility</p>
-    <h2 id="privacy-settings-title">Privacy</h2>
-    <p>Your profile and published tree stories are visible to the Canopy community. Avoid adding private contact details to your public bio. You can review your public profile before sharing it.</p>
-    <a class="settings-secondary-link" href="{% url 'user_profile' user.username %}">View your public profile</a>
-  </section>
-
-  <section class="settings-card" id="security-settings" aria-labelledby="security-settings-title">
-    <p class="eyebrow">Keep your account safe</p>
-    <h2 id="security-settings-title">Change password</h2>
-    <form method="post" class="settings-form">
+{% elif active_section == "account" %}
+  <section class="settings-section" aria-labelledby="settings-account-title">
+    <header class="settings-section-heading"><div><p class="eyebrow">Your account</p><h2 id="settings-account-title">Account details</h2><p>Update your login details and language preference.</p></div></header>
+    <form method="post" class="settings-form" data-dirty-form>
       {% csrf_token %}
-      {{ password_form.as_p }}
-      <button type="submit" name="change_password" class="settings-primary-button">Update password</button>
+      <div class="settings-form-fields">{{ user_form.as_p }}{{ language_form.as_p }}</div>
+      <p class="settings-save-hint">Your email is used for sign-in and is not shown on your public profile.</p>
+      <div class="settings-form-footer"><span class="settings-save-hint">Username changes are limited to once every 30 days.</span><button type="submit" name="update_account" class="settings-primary-button" data-save-button disabled>Save changes</button></div>
     </form>
   </section>
-
-  <section class="impact-dashboard" aria-labelledby="impact-dashboard-title">
-    <p class="eyebrow">Your contribution</p>
-    <h2 id="impact-dashboard-title">Environmental impact</h2>
+{% elif active_section == "privacy" %}
+  <section class="settings-section" aria-labelledby="settings-privacy-title">
+    <header class="settings-section-heading"><div><p class="eyebrow">Your information</p><h2 id="settings-privacy-title">Privacy</h2><p>Know what other people can see when they visit your Canopy profile.</p></div></header>
+    <div class="settings-info-list">
+      <article><span class="settings-info-icon" aria-hidden="true">◎</span><div><h3>Public profile</h3><p>Your name, username, profile photo, bio, location, website, badges, and published tree stories are visible to other Canopy members.</p></div><span class="settings-status">Public</span></article>
+      <article><span class="settings-info-icon" aria-hidden="true">@</span><div><h3>Email address</h3><p>Your email address is used for your account and is not displayed on your public profile.</p></div><span class="settings-status">Private</span></article>
+      <article><span class="settings-info-icon" aria-hidden="true">◷</span><div><h3>Location</h3><p>Your profile location is public. Tree locations are shared with each published tree story.</p></div><a class="settings-secondary-link" href="{% url 'profile_settings' %}">Edit profile</a></article>
+    </div>
+    <p class="settings-note">Canopy does not currently offer per-field visibility switches. Review your public profile before adding personal details.</p>
+    <a class="settings-primary-button settings-button-link" href="{% url 'user_profile' user.username %}">Preview public profile</a>
+  </section>
+{% elif active_section == "security" %}
+  <section class="settings-section" aria-labelledby="settings-security-title">
+    <header class="settings-section-heading"><div><p class="eyebrow">Protect your account</p><h2 id="settings-security-title">Security</h2><p>Choose a strong password you don't use on other sites.</p></div></header>
+    <form method="post" class="settings-form" data-dirty-form data-password-form>
+      {% csrf_token %}
+      <div class="settings-form-fields">{{ password_form.as_p }}</div>
+      <div class="password-strength" aria-live="polite">
+        <div class="password-strength-track"><span data-password-strength-bar></span></div>
+        <span data-password-strength-label>Enter a new password</span>
+      </div>
+      <ul class="password-requirements">
+        <li data-password-rule="length">At least 8 characters</li>
+        <li data-password-rule="number">Contains a number</li>
+        <li data-password-rule="uppercase">Contains an uppercase letter</li>
+      </ul>
+      <div class="settings-form-footer"><span class="settings-save-hint">Changing your password keeps this device signed in.</span><button type="submit" name="change_password" class="settings-primary-button" data-save-button disabled>Update password</button></div>
+    </form>
+  </section>
+{% elif active_section == "appearance" %}
+  <section class="settings-section" aria-labelledby="settings-appearance-title">
+    <header class="settings-section-heading"><div><p class="eyebrow">Set the mood</p><h2 id="settings-appearance-title">Appearance</h2><p>Choose a theme that feels comfortable wherever you are.</p></div></header>
+    <div class="theme-choice-grid" role="group" aria-label="Color theme">
+      <button type="button" class="theme-choice" data-theme-choice="light" aria-pressed="false"><span class="theme-choice-preview theme-choice-preview--light" aria-hidden="true"></span><strong>Light</strong><small>Bright and open</small></button>
+      <button type="button" class="theme-choice" data-theme-choice="dark" aria-pressed="false"><span class="theme-choice-preview theme-choice-preview--dark" aria-hidden="true"></span><strong>Dark</strong><small>Easy on the eyes</small></button>
+      <button type="button" class="theme-choice" data-theme-choice="system" aria-pressed="false"><span class="theme-choice-preview theme-choice-preview--system" aria-hidden="true"></span><strong>System</strong><small>Follow your device</small></button>
+    </div>
+    <p class="settings-note">Your choice is saved on this device and applied across Canopy.</p>
+  </section>
+{% elif active_section == "impact" %}
+  <section class="settings-section settings-section--impact" aria-labelledby="impact-dashboard-title">
+    <header class="settings-section-heading"><div><p class="eyebrow">Small actions, real change</p><h2 id="impact-dashboard-title">Your environmental impact</h2><p>A personal record of the care and commitments you’ve shared.</p></div></header>
     <dl class="impact-metrics">
-      <div><dt>Impact score</dt><dd>{{ impact_score.total_score }}</dd></div>
-      <div><dt>Trees planted</dt><dd>{{ impact_score.trees_planted }}</dd></div>
-      <div><dt>Pledges made</dt><dd>{{ impact_score.pledges_made }}</dd></div>
-      <div><dt>Help offers</dt><dd>{{ impact_score.help_offered }}</dd></div>
+      <div><dt>Impact score</dt><dd>{{ impact_score.total_score }}</dd></div><div><dt>Trees planted</dt><dd>{{ impact_score.trees_planted }}</dd></div><div><dt>Pledges made</dt><dd>{{ impact_score.pledges_made }}</dd></div><div><dt>Help offers</dt><dd>{{ impact_score.help_offered }}</dd></div>
     </dl>
     <div class="impact-dashboard-columns">
-      <section aria-labelledby="pledge-queue-title">
-        <h3 id="pledge-queue-title">Pledge queue</h3>
-        <ul class="impact-dashboard-list">
-          {% for pledge in pledges %}
-            <li>
-              <span>
-                {% if pledge.source_post %}<a href="{% url 'tree_detail' pledge.source_post_id %}">{% endif %}
-                {{ pledge.species|default:"A tree" }}
-                {% if pledge.source_post %}</a>{% endif %}
-                · {{ pledge.get_status_display }}
-              </span>
-              {% if pledge.status == 'pending' %}
-                <form method="post" action="{% url 'update_pledge_status' pledge.id %}">
-                  {% csrf_token %}
-                  <button name="status" value="planted" type="submit">Mark planted</button>
-                  <button name="status" value="abandoned" type="submit">Abandon</button>
-                </form>
-              {% endif %}
-            </li>
-          {% empty %}
-            <li class="impact-dashboard-empty">Your planting pledges will appear here.</li>
-          {% endfor %}
-        </ul>
-      </section>
-      <section aria-labelledby="notification-title">
-        <h3 id="notification-title">Recent notifications</h3>
-        <ul class="impact-dashboard-list">
-          {% for notification in notifications %}
-            <li>
-              <span><strong>{{ notification.actor.username }}</strong>
-                {% if notification.tree %}
-                  pledged after seeing <a href="{% url 'tree_detail' notification.tree_id %}">{{ notification.tree.name }}</a>.
-                {% else %}
-                  started following you.
-                {% endif %}
-              </span>
-              <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'M j, Y H:i' }}</time>
-            </li>
-          {% empty %}
-            <li class="impact-dashboard-empty">Pledge notifications will appear here.</li>
-          {% endfor %}
-        </ul>
-      </section>
+      <section aria-labelledby="pledge-queue-title"><h3 id="pledge-queue-title">Planting pledges</h3><ul class="impact-dashboard-list">
+        {% for pledge in pledges %}<li><span>{% if pledge.source_post %}<a href="{% url 'tree_detail' pledge.source_post_id %}">{% endif %}{{ pledge.species|default:"A tree" }}{% if pledge.source_post %}</a>{% endif %} · {{ pledge.get_status_display }}</span>{% if pledge.status == 'pending' %}<form method="post" action="{% url 'update_pledge_status' pledge.id %}">{% csrf_token %}<button name="status" value="planted" type="submit">Mark planted</button><button name="status" value="abandoned" type="submit">Abandon</button></form>{% endif %}</li>{% empty %}<li class="impact-dashboard-empty">Your planting pledges will appear here.</li>{% endfor %}
+      </ul></section>
+      <section aria-labelledby="impact-notification-title"><h3 id="impact-notification-title">Recent activity</h3><ul class="impact-dashboard-list">
+        {% for notification in notifications %}<li><span>{% if notification.actor %}<strong>{{ notification.actor.username }}</strong>{% endif %}{% if notification.tree %} pledged after seeing <a href="{% url 'tree_detail' notification.tree_id %}">{{ notification.tree.name }}</a>.{% else %} started following you.{% endif %}</span><time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'M j, Y H:i' }}</time></li>{% empty %}<li class="impact-dashboard-empty">Your community activity will appear here.</li>{% endfor %}
+      </ul></section>
     </div>
   </section>
-</main>
+{% else %}
+  <section class="settings-section" aria-labelledby="settings-actions-title">
+    <header class="settings-section-heading"><div><p class="eyebrow">Account access</p><h2 id="settings-actions-title">Account actions</h2><p>Manage how you access Canopy.</p></div></header>
+    <article class="settings-action-card"><span class="settings-info-icon" aria-hidden="true">↗</span><div><h3>Sign out</h3><p>End your current Canopy session on this device. You can sign back in anytime.</p></div><a class="settings-secondary-link" href="{% url 'logout' %}">Sign out</a></article>
+    <p class="settings-note">Account deactivation and permanent deletion are not currently available in Canopy. Contact support if you need help with your account.</p>
+  </section>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ settings_title|default:"Settings" }} · Canopy{% endblock %}
+{% block content %}
+<main class="settings-shell">
+  <header class="settings-header">
+    <p class="settings-breadcrumb"><a href="{% url 'user_profile' user.username %}">Your Canopy</a><span aria-hidden="true">/</span> Settings</p>
+    <h1>Settings</h1>
+    <p>Make Canopy feel like yours. Your changes stay in sync as you explore.</p>
+  </header>
+  <nav class="settings-mobile-nav" aria-label="Settings sections">
+    {% include "settings/_navigation.html" %}
+  </nav>
+  <div class="settings-layout">
+    <aside class="settings-sidebar" aria-label="Settings sections">
+      {% include "settings/_navigation.html" %}
+      <div class="settings-sidebar-help">
+        <span class="settings-help-icon" aria-hidden="true">?</span>
+        <span><strong>Need a hand?</strong><small>Explore Canopy's growing community.</small></span>
+        <a href="{% url 'tree_list' %}" aria-label="Visit the community">→</a>
+      </div>
+    </aside>
+    <section class="settings-content" aria-label="Settings details">
+      {% if message %}<p class="settings-message" role="status">{{ message }}</p>{% endif %}
+      {% block settings_content %}{% endblock %}
+    </section>
+  </div>
+</main>
+{% endblock %}
+{% block page_scripts %}
+  <script src="{% static 'trees/settings.js' %}" defer></script>
+{% endblock %}

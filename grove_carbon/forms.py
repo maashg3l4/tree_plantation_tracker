@@ -1,9 +1,10 @@
 from django import forms
 
 from grove.models import Plot
+from trees.form_styling import StyledFormMixin
 
 
-class CarbonEstimateForm(forms.Form):
+class CarbonEstimateForm(StyledFormMixin, forms.Form):
     plot = forms.ModelChoiceField(queryset=Plot.objects.none())
     horizon_years = forms.IntegerField(min_value=1, max_value=100, initial=1)
 

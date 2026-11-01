@@ -55,7 +55,7 @@
                     {% include "trees/partials/tree_health_chip.html" with tree=tree user=user %}
                     {% include "trees/partials/impact_reaction_bar.html" with tree=tree impact_reaction_types=impact_reaction_types user=user %}
                     <section class="tree-comments">
-                        <h3>Community notes <span>({{ tree.comments.all|length }})</span></h3>
+                        <h3>Community notes <span>({{ tree.comment_count }})</span></h3>
                         {% if user.is_authenticated %}
                             <form
                                 class="comment-form"
@@ -74,7 +74,7 @@
                             </form>
                         {% endif %}
                         <ul class="tree-comment-list" id="tree-comments-{{ tree.id }}">
-                            {% for comment in tree.comments.all %}
+                            {% for comment in tree.feed_comments %}
                                 <li class="tree-comment">
                                     <span class="tree-comment-author">{{ comment.user.username }}</span>
                                     <span>{{ comment.text }}</span>

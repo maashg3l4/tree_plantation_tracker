@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import Tree, HealthLog, Task
 from .location_data import COUNTRIES
+from .form_styling import StyledFormMixin
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -16,12 +17,31 @@ class MultipleFileField(forms.FileField):
         if not data:
             return []
         files = data if isinstance(data, (list, tuple)) else [data]
-        return [super().clean(upload, initial) for upload in files]
+        clean_file = super().clean
+        return [clean_file(upload, initial) for upload in files]
 
 
-class TreeForm(forms.ModelForm):
-    latitude = forms.FloatField(widget=forms.HiddenInput(), required=False)
-    longitude = forms.FloatField(widget=forms.HiddenInput(), required=False)
+class TreeForm(StyledFormMixin, forms.ModelForm):
+    latitude = forms.FloatField(
+        required=False,
+        widget=forms.NumberInput(attrs={
+            "step": "any",
+            "min": "-90",
+            "max": "90",
+            "inputmode": "decimal",
+            "autocomplete": "off",
+        }),
+    )
+    longitude = forms.FloatField(
+        required=False,
+        widget=forms.NumberInput(attrs={
+            "step": "any",
+            "min": "-180",
+            "max": "180",
+            "inputmode": "decimal",
+            "autocomplete": "off",
+        }),
+    )
     species = forms.CharField(required=False, widget=forms.TextInput(attrs={'id': 'id_species'}))
     extra_images = MultipleFileField(required=False)
     video = forms.FileField(required=False)
@@ -80,7 +100,7 @@ class TreeForm(forms.ModelForm):
             self.add_error("scheduled_publish_at", "Choose a future publication time.")
         return cleaned
 
-class HealthLogForm(forms.ModelForm):
+class HealthLogForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = HealthLog
         fields = ['date', 'health_status', 'notes', 'is_dead', 'death_reason']
@@ -89,7 +109,7 @@ class HealthLogForm(forms.ModelForm):
             'death_reason': forms.Textarea(attrs={'rows': 2}),
         }
 
-class TaskForm(forms.ModelForm):
+class TaskForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = ['task_type', 'scheduled_date', 'completed']

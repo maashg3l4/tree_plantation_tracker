@@ -14,7 +14,7 @@ COUNTRIES = [
     ("Other", "Other"),
 ]
 
-# Example divisions for Bangladesh (expand as needed)
+# Location choices shared by the tree form and its map controls.
 DIVISIONS = {
     "Bangladesh": [
         ("", "Select Division"),
@@ -30,7 +30,6 @@ DIVISIONS = {
     # Add more countries and their divisions as needed
 }
 
-# Example districts for Dhaka (expand as needed)
 DISTRICTS = {
     "Dhaka": [
         ("", "Select District"),
@@ -48,5 +47,76 @@ DISTRICTS = {
         ("Rajbari", "Rajbari"),
         ("Shariatpur", "Shariatpur"),
     ],
-    # Add more divisions and their districts as needed
+    "Chattogram": [
+        ("", "Select District"),
+        ("Chattogram", "Chattogram"),
+        ("Cox's Bazar", "Cox's Bazar"),
+        ("Cumilla", "Cumilla"),
+        ("Feni", "Feni"),
+        ("Brahmanbaria", "Brahmanbaria"),
+        ("Rangamati", "Rangamati"),
+        ("Noakhali", "Noakhali"),
+        ("Chandpur", "Chandpur"),
+        ("Lakshmipur", "Lakshmipur"),
+        ("Khagrachhari", "Khagrachhari"),
+        ("Bandarban", "Bandarban"),
+    ],
+    "Khulna": [
+        ("", "Select District"),
+        ("Khulna", "Khulna"),
+        ("Bagerhat", "Bagerhat"),
+        ("Satkhira", "Satkhira"),
+        ("Jashore", "Jashore"),
+        ("Narail", "Narail"),
+        ("Magura", "Magura"),
+        ("Jhenaidah", "Jhenaidah"),
+        ("Kushtia", "Kushtia"),
+        ("Chuadanga", "Chuadanga"),
+        ("Meherpur", "Meherpur"),
+    ],
+    "Barisal": [
+        ("", "Select District"),
+        ("Barisal", "Barisal"),
+        ("Patuakhali", "Patuakhali"),
+        ("Bhola", "Bhola"),
+        ("Pirojpur", "Pirojpur"),
+        ("Barguna", "Barguna"),
+        ("Jhalokati", "Jhalokati"),
+    ],
+    "Sylhet": [
+        ("", "Select District"),
+        ("Sylhet", "Sylhet"),
+        ("Moulvibazar", "Moulvibazar"),
+        ("Habiganj", "Habiganj"),
+        ("Sunamganj", "Sunamganj"),
+    ],
+    "Rajshahi": [
+        ("", "Select District"),
+        ("Rajshahi", "Rajshahi"),
+        ("Bogura", "Bogura"),
+        ("Joypurhat", "Joypurhat"),
+        ("Naogaon", "Naogaon"),
+        ("Natore", "Natore"),
+        ("Chapainawabganj", "Chapainawabganj"),
+        ("Pabna", "Pabna"),
+        ("Sirajganj", "Sirajganj"),
+    ],
+    "Rangpur": [
+        ("", "Select District"),
+        ("Rangpur", "Rangpur"),
+        ("Dinajpur", "Dinajpur"),
+        ("Kurigram", "Kurigram"),
+        ("Gaibandha", "Gaibandha"),
+        ("Thakurgaon", "Thakurgaon"),
+        ("Panchagarh", "Panchagarh"),
+        ("Nilphamari", "Nilphamari"),
+        ("Lalmonirhat", "Lalmonirhat"),
+    ],
+    "Mymensingh": [
+        ("", "Select District"),
+        ("Mymensingh", "Mymensingh"),
+        ("Netrokona", "Netrokona"),
+        ("Jamalpur", "Jamalpur"),
+        ("Sherpur", "Sherpur"),
+    ],
 }

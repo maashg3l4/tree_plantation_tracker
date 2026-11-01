@@ -1,9 +1,10 @@
 from django import forms
 
 from .models import Report
+from trees.form_styling import StyledFormMixin
 
 
-class ReportForm(forms.ModelForm):
+class ReportForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Report
         fields = ["reason", "details"]
@@ -20,7 +21,7 @@ class ReportForm(forms.ModelForm):
         }
 
 
-class ModerationActionForm(forms.Form):
+class ModerationActionForm(StyledFormMixin, forms.Form):
     action = forms.ChoiceField(
         widget=forms.Select(attrs={"class": "ops-form-control"}),
         choices=[
@@ -39,7 +40,7 @@ class ModerationActionForm(forms.Form):
     )
 
 
-class AIFlagActionForm(forms.Form):
+class AIFlagActionForm(StyledFormMixin, forms.Form):
     action = forms.ChoiceField(
         widget=forms.Select(attrs={"class": "ops-form-control"}),
         choices=[

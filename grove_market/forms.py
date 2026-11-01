@@ -1,9 +1,10 @@
 from django import forms
 
 from .models import MarketplaceListing
+from trees.form_styling import StyledFormMixin
 
 
-class MarketplaceListingForm(forms.ModelForm):
+class MarketplaceListingForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = MarketplaceListing
         fields = [
