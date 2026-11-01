@@ -1050,13 +1050,13 @@ def profile_view(request, section="profile"):
     password_form = PasswordChangeForm()
     message = None
     if request.method == 'POST':
-        if section == "profile" and 'update_profile' in request.POST:
+        if section == "profile":
             profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
             profile_form.fields.pop("language")
             if profile_form.is_valid():
                 profile_form.save()
                 message = 'Profile updated successfully.'
-        elif section == "account" and 'update_account' in request.POST:
+        elif section == "account":
             previous_username = request.user.username
             user_form = UserForm(request.POST, instance=request.user, profile=profile)
             language_form = ProfileForm(request.POST, instance=profile)
@@ -1068,7 +1068,7 @@ def profile_view(request, section="profile"):
                     profile.username_changed_at = timezone.now()
                     profile.save(update_fields=['username_changed_at'])
                 message = 'Account details updated successfully.'
-        elif section == "security" and 'change_password' in request.POST:
+        elif section == "security":
             password_form = PasswordChangeForm(request.POST)
             if password_form.is_valid():
                 old = password_form.cleaned_data['old_password']

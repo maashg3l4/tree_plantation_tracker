@@ -130,6 +130,39 @@ class ProfileSettingsTests(TestCase):
         public_profile = self.client.get(reverse('user_profile', args=[self.user.username]))
         self.assertContains(public_profile, 'Growing native trees with my family.')
 
+    def test_profile_form_saves_fields_and_images_without_submit_button_name(self):
+        image_buffer = BytesIO()
+        Image.new('RGB', (2, 2), color='green').save(image_buffer, format='PNG')
+        image_content = image_buffer.getvalue()
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                response = self.client.post(
+                    '/settings/profile/',
+                    {
+                        'bio': 'Growing a greener neighborhood.',
+                        'location': 'Dhaka',
+                        'website': 'https://example.com',
+                        'account_type': 'personal',
+                        'profile_picture': SimpleUploadedFile(
+                            'profile.png', image_content, content_type='image/png'
+                        ),
+                        'cover_image': SimpleUploadedFile(
+                            'cover.png', image_content, content_type='image/png'
+                        ),
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'Profile updated successfully.')
+                self.user.profile.refresh_from_db()
+                self.assertEqual(
+                    self.user.profile.bio,
+                    'Growing a greener neighborhood.',
+                )
+                self.assertTrue(self.user.profile.profile_picture.name)
+                self.assertTrue(self.user.profile.cover_image.name)
+
     def test_settings_password_link_get_redirects_to_profile_settings(self):
         response = self.client.get('/settings/password/')
         self.assertRedirects(response, '/profile/')
